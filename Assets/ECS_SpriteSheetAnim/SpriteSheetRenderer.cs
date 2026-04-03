@@ -1,4 +1,7 @@
-﻿using Unity.Entities;
+﻿using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -8,25 +11,36 @@ public partial struct SpriteSheetRenderSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
-        Camera _camera = Camera.main;
-
         MaterialPropertyBlock materialPropertyBlock = new MaterialPropertyBlock();
         Vector4[] uv = new Vector4[1];
 
         Mesh quadMesh = GameHandler.GetInstance().quadMesh;
         Material material = GameHandler.GetInstance().walkingSpriteSheetMaterial;
 
+        EntityQuery entityQuery = state.GetEntityQuery(typeof(SpriteSheetAnimationData));
+        NativeArray<SpriteSheetAnimationData> animationDataArray = entityQuery.ToComponentDataArray<SpriteSheetAnimationData>(Allocator.TempJob);
 
+       
 
-        foreach (var (transform, spriteData) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<SpriteSheetAnimationData>>())
+        int shaderPropertyId = Shader.PropertyToID("_MainTex_UV");
+
+        int sliceCount = 1023;
+
+        for(int i = 0; i < animationDataArray.Length; i+= sliceCount)
         {
-            uv[0] = spriteData.ValueRO.uv;
+            int sliceSize = math.min(animationDataArray.Length - i, sliceCount);
+            List<Matrix4x4> matrixList = new List<Matrix4x4>();
+            List<Vector4> uvList = new List<Vector4>();
+            for (int j = 0; j < sliceSize; j++)
+            {
+                SpriteSheetAnimationData spriteSheeetAnimationData = animationDataArray[i + j];
+                matrixList.Add(spriteSheeetAnimationData.matrix);
+                uvList.Add(spriteSheeetAnimationData.uv);
+            }
+            materialPropertyBlock.SetVectorArray(shaderPropertyId, uvList);
 
-            materialPropertyBlock.SetVectorArray("_MainTex_UV", uv);
-
-            Graphics.DrawMesh(quadMesh, spriteData.ValueRO.matrix, material, 0, _camera, 0, materialPropertyBlock);
+            Graphics.DrawMeshInstanced(quadMesh, 0, material, matrixList, materialPropertyBlock);
         }
-
 
     }
 }
