@@ -16,13 +16,13 @@ public partial struct SpriteSheetRenderSystem : ISystem
 
         Mesh quadMesh = GameHandler.GetInstance().quadMesh;
         Material material = GameHandler.GetInstance().walkingSpriteSheetMaterial;
+        int shaderPropertyId = Shader.PropertyToID("_MainTex_UV");
 
         EntityQuery entityQuery = state.GetEntityQuery(typeof(SpriteSheetAnimationData));
-        NativeArray<SpriteSheetAnimationData> animationDataArray = entityQuery.ToComponentDataArray<SpriteSheetAnimationData>(Allocator.TempJob);
+        NativeArray<SpriteSheetAnimationData> animationDataArray = entityQuery.ToComponentDataArray<SpriteSheetAnimationData>(Allocator.Temp);
 
        
 
-        int shaderPropertyId = Shader.PropertyToID("_MainTex_UV");
 
         int sliceCount = 1023;
 
