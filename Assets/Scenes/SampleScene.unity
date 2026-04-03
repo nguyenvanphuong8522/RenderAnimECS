@@ -236,6 +236,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585548}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -286,7 +287,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 20
+  orthographic size: 40
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -361,6 +362,22 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &330585548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f71370754a2aa4b937556ac0179067, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MobileCameraZoom
+  cam: {fileID: 330585545}
+  zoomSpeed: 0.1
+  minZoom: 3
+  maxZoom: 20
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -521,9 +538,9 @@ MonoBehaviour:
   walkingSpriteSheetMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   FrameCount: 14
   FrameTimerMax: 0.05
-  AmountEntity: 50000
-  XRange: 20
-  YRange: 20
+  AmountEntity: 10000
+  XRange: 40
+  YRange: 40
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0
