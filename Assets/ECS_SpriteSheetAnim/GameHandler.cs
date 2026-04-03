@@ -13,6 +13,9 @@ public class GameHandler : MonoBehaviour
     public int FrameCount;
     public float FrameTimerMax = 0.1f;
     public int AmountEntity;
+
+    public float XRange;
+    public float YRange;
     private void Awake()
     {
         instance = this;
@@ -28,8 +31,8 @@ public class GameHandler : MonoBehaviour
 
         foreach (Entity entity in entityArray)
         {
-            float x = UnityEngine.Random.Range(-5f, 5f);
-            float y = UnityEngine.Random.Range(-2.5f, 2.5f);
+            float x = UnityEngine.Random.Range(-XRange, XRange);
+            float y = UnityEngine.Random.Range(-YRange, YRange);
 
 
 

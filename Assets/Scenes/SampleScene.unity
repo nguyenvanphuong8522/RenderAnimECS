@@ -180,8 +180,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 20
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -416,7 +416,9 @@ MonoBehaviour:
   walkingSpriteSheetMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   FrameCount: 14
   FrameTimerMax: 0.05
-  AmountEntity: 1000
+  AmountEntity: 10000
+  XRange: 20
+  YRange: 20
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0
