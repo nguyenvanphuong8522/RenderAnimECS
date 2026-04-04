@@ -11,25 +11,35 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     ComputeBuffer uvBuffer;
     ComputeBuffer argsBuffer;
 
-
+    static NativeArray<Matrix4x4> matrixArray;
+    static NativeArray<Vector4> uvArray;
+    NativeArray<uint> args;
 
     Material material;
     Mesh mesh;
 
     Camera cam;
+
     const int MAX = 1_000_000;
+
     public float height;
     public float width;
+
     protected override void OnCreate()
     {
         RequireForUpdate<SpriteSheetAnimationData>();
 
-
         matrixBuffer = new ComputeBuffer(MAX, 64);
-
         uvBuffer = new ComputeBuffer(MAX, 16);
 
         argsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
+
+        // Allocate 1 lần
+        matrixArray = new NativeArray<Matrix4x4>(MAX, Allocator.Persistent);
+
+        uvArray = new NativeArray<Vector4>(MAX, Allocator.Persistent);
+
+        args = new NativeArray<uint>(5, Allocator.Persistent);
     }
 
     protected override void OnUpdate()
@@ -43,14 +53,11 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
             cam = Camera.main;
 
             height = cam.orthographicSize;
-
             width = height * cam.aspect;
         }
 
         mesh = handler.quadMesh;
         material = handler.walkingSpriteSheetMaterial;
-
-
 
         Vector3 camPos = cam.transform.position;
 
@@ -61,12 +68,9 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         float maxY = camPos.y + height;
 
         int index = 0;
-        Matrix4x4[] matrixArray;
-        Vector4[] uvArray;
 
-        matrixArray = new Matrix4x4[MAX];
-        uvArray = new Vector4[MAX];
-        Entities.ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
+        Entities
+        .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
             float3 pos = transform.Position;
 
@@ -81,7 +85,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
             index++;
 
-        }).WithoutBurst().Run();
+        }).Run();
 
         if (index == 0) return;
 
@@ -90,17 +94,13 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         uvBuffer.SetData(uvArray, 0, 0, index);
 
         material.SetBuffer("_Matrices", matrixBuffer);
-
         material.SetBuffer("_UVData", uvBuffer);
 
-        uint[] args = new uint[5]
-        {
-            mesh.GetIndexCount(0),
-            (uint)index,
-            mesh.GetIndexStart(0),
-            mesh.GetBaseVertex(0),
-            0
-        };
+        args[0] = mesh.GetIndexCount(0);
+        args[1] = (uint)index;
+        args[2] = mesh.GetIndexStart(0);
+        args[3] = mesh.GetBaseVertex(0);
+        args[4] = 0;
 
         argsBuffer.SetData(args);
 
@@ -112,5 +112,14 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         matrixBuffer.Release();
         uvBuffer.Release();
         argsBuffer.Release();
+
+        if (matrixArray.IsCreated)
+            matrixArray.Dispose();
+
+        if (uvArray.IsCreated)
+            uvArray.Dispose();
+
+        if (args.IsCreated)
+            args.Dispose();
     }
 }
