@@ -52,7 +52,8 @@ public class GameHandler : MonoBehaviour
                     currentFrame = UnityEngine.Random.Range(0, FrameCount),
                     frameCount = FrameCount,
                     frameTimer = 0,
-                    frameTimerMax = FrameTimerMax
+                    frameTimerMax = FrameTimerMax,
+                    uvWidth = (float)1f / FrameCount,
                 }
             );
         }

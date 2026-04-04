@@ -11,7 +11,7 @@ public struct SpriteSheetAnimationData : IComponentData
     public float frameTimer;
     public float frameTimerMax;
     public Vector4 uv;
-    public Matrix4x4 matrix;
+    public float uvWidth;
 }
 
 [BurstCompile]
@@ -24,39 +24,44 @@ public partial struct SpriteSheetAnimationSystem : ISystem
             deltaTime = SystemAPI.Time.DeltaTime
         };
 
-        job.ScheduleParallel();
+        state.Dependency = job.ScheduleParallel(state.Dependency);
     }
 }
-
-
-
-
 
 [BurstCompile]
 public partial struct AnimationJob : IJobEntity
 {
     public float deltaTime;
 
-    public void Execute(ref SpriteSheetAnimationData spriteData, ref LocalTransform transform)
+    public void Execute(
+        ref SpriteSheetAnimationData sprite,
+        ref LocalTransform transform)
     {
-        spriteData.frameTimer += deltaTime;
+        sprite.frameTimer += deltaTime;
 
-        while (spriteData.frameTimer >= spriteData.frameTimerMax)
+        int advance =
+            (int)(sprite.frameTimer / sprite.frameTimerMax);
+
+        if (advance > 0)
         {
-            spriteData.frameTimer -= spriteData.frameTimerMax;
+            sprite.frameTimer -=
+                advance * sprite.frameTimerMax;
 
+            sprite.currentFrame =
+                (sprite.currentFrame + advance)
+                % sprite.frameCount;
 
-
-            spriteData.currentFrame = (spriteData.currentFrame + 1) % spriteData.frameCount;
-
-            float uvWidth = 1f / spriteData.frameCount;
-
-            spriteData.uv = new Vector4(uvWidth, 1f, uvWidth * spriteData.currentFrame, 0f);
+            sprite.uv = new Vector4(
+                sprite.uvWidth,
+                1,
+                sprite.uvWidth * sprite.currentFrame,
+                0);
         }
-        float3 position = transform.Position;
 
-        position.z = position.y * .01f;
+        float3 pos = transform.Position;
 
-        spriteData.matrix = Matrix4x4.TRS(position, Quaternion.identity, Vector3.one);
+        pos.z = pos.y * .01f;
+
+        transform.Position = pos;
     }
 }

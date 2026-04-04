@@ -6,7 +6,7 @@ public class MobileCameraZoom : MonoBehaviour
 
     public float zoomSpeed = 0.1f;
     public float minZoom = 3f;
-    public float maxZoom = 20f;
+    public float maxZoom = 2000f;
 
     void Update()
     {

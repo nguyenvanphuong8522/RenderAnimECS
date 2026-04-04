@@ -377,7 +377,7 @@ MonoBehaviour:
   cam: {fileID: 330585545}
   zoomSpeed: 0.1
   minZoom: 3
-  maxZoom: 20
+  maxZoom: 200
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -538,7 +538,7 @@ MonoBehaviour:
   walkingSpriteSheetMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   FrameCount: 14
   FrameTimerMax: 0.05
-  AmountEntity: 10000
+  AmountEntity: 1000000
   XRange: 40
   YRange: 40
 --- !u!4 &1459524507

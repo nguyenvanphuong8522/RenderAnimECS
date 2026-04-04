@@ -1,60 +1,115 @@
 ﻿using Unity.Entities;
+using Unity.Transforms;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
-public partial class SpriteSheetRenderSystem : SystemBase
+public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
-    private Matrix4x4[] matrixCache;
-    private Vector4[] uvCache;
-    private MaterialPropertyBlock materialPropertyBlock;
-    private int uvPropertyId;
+    ComputeBuffer matrixBuffer;
+    ComputeBuffer uvBuffer;
+    ComputeBuffer argsBuffer;
+
+    Matrix4x4[] matrixArray;
+    Vector4[] uvArray;
+
+    Material material;
+    Mesh mesh;
+
+    const int MAX = 1_000_000;
 
     protected override void OnCreate()
     {
         RequireForUpdate<SpriteSheetAnimationData>();
-        matrixCache = new Matrix4x4[1023];
-        uvCache = new Vector4[1023];
-        materialPropertyBlock = new MaterialPropertyBlock();
-        uvPropertyId = Shader.PropertyToID("_MainTex_UV");
+
+        matrixArray = new Matrix4x4[MAX];
+        uvArray = new Vector4[MAX];
+
+        matrixBuffer =
+            new ComputeBuffer(MAX, 64);
+
+        uvBuffer =
+            new ComputeBuffer(MAX, 16);
+
+        argsBuffer =
+            new ComputeBuffer(
+                1,
+                5 * sizeof(uint),
+                ComputeBufferType.IndirectArguments);
     }
 
     protected override void OnUpdate()
     {
         var handler = GameHandler.GetInstance();
+
         if (handler == null) return;
 
-        Mesh quadMesh = handler.quadMesh;
-        Material material = handler.walkingSpriteSheetMaterial;
+        mesh = handler.quadMesh;
+        material = handler.walkingSpriteSheetMaterial;
 
-        // Reset bộ đếm để lấp đầy cache
-        int currentIndex = 0;
+        int index = 0;
 
-        // Chạy trực tiếp trên các thực thể mà không copy mảng lớn
         Entities
-            .ForEach((in SpriteSheetAnimationData data) =>
-            {
-                matrixCache[currentIndex] = data.matrix;
-                uvCache[currentIndex] = data.uv;
-                currentIndex++;
-
-                // Khi đạt tới giới hạn 1023, vẽ ngay lập tức và reset bộ đếm
-                if (currentIndex == 1023)
-                {
-                    DrawBatch(quadMesh, material, 1023);
-                    currentIndex = 0;
-                }
-            }).WithoutBurst().Run(); // Phải dùng WithoutBurst vì truy cập mảng managed
-
-        // Vẽ phần dư còn lại
-        if (currentIndex > 0)
+        .ForEach((
+            in LocalTransform transform,
+            in SpriteSheetAnimationData sprite) =>
         {
-            DrawBatch(quadMesh, material, currentIndex);
-        }
+            float3 pos = transform.Position;
+
+            matrixArray[index] =
+                Matrix4x4.TRS(
+                    pos,
+                    Quaternion.identity,
+                    Vector3.one);
+
+            uvArray[index] = sprite.uv;
+
+            index++;
+
+        }).WithoutBurst().Run();
+
+        if (index == 0) return;
+
+        matrixBuffer.SetData(
+            matrixArray, 0, 0, index);
+
+        uvBuffer.SetData(
+            uvArray, 0, 0, index);
+
+        material.SetBuffer(
+            "_Matrices",
+            matrixBuffer);
+
+        material.SetBuffer(
+            "_UVData",
+            uvBuffer);
+
+        uint[] args = new uint[5]
+        {
+            mesh.GetIndexCount(0),
+            (uint)index,
+            mesh.GetIndexStart(0),
+            mesh.GetBaseVertex(0),
+            0
+        };
+
+        argsBuffer.SetData(args);
+
+        Graphics.DrawMeshInstancedIndirect(
+            mesh,
+            0,
+            material,
+            new Bounds(
+                Vector3.zero,
+                Vector3.one * 10000),
+            argsBuffer);
     }
 
-    private void DrawBatch(Mesh mesh, Material mat, int count)
+    protected override void OnDestroy()
     {
-        materialPropertyBlock.SetVectorArray(uvPropertyId, uvCache);
-        Graphics.DrawMeshInstanced(mesh, 0, mat, matrixCache, count, materialPropertyBlock);
+        matrixBuffer.Release();
+        uvBuffer.Release();
+        argsBuffer.Release();
     }
 }
