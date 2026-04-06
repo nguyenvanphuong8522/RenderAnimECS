@@ -54,6 +54,7 @@ public class GameHandler : MonoBehaviour
                     frameTimer = 0,
                     frameTimerMax = FrameTimerMax,
                     uvWidth = (float)1f / FrameCount,
+                    invFrameTimerMax = 1f / FrameTimerMax
                 }
             );
         }

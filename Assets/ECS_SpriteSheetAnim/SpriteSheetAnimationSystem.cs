@@ -12,6 +12,7 @@ public struct SpriteSheetAnimationData : IComponentData
     public float frameTimerMax;
     public Vector4 uv;
     public float uvWidth;
+    public float invFrameTimerMax;
 }
 
 [BurstCompile]
@@ -33,35 +34,30 @@ public partial struct AnimationJob : IJobEntity
 {
     public float deltaTime;
 
-    public void Execute(
-        ref SpriteSheetAnimationData sprite,
-        ref LocalTransform transform)
+    public void Execute(ref SpriteSheetAnimationData sprite, ref LocalTransform transform)
     {
         sprite.frameTimer += deltaTime;
 
-        int advance =
-            (int)(sprite.frameTimer / sprite.frameTimerMax);
+        int advance = (int)(sprite.frameTimer * sprite.invFrameTimerMax);
 
         if (advance > 0)
         {
-            sprite.frameTimer -=
-                advance * sprite.frameTimerMax;
+            sprite.frameTimer -= advance * sprite.frameTimerMax;
 
-            sprite.currentFrame =
-                (sprite.currentFrame + advance)
-                % sprite.frameCount;
+            sprite.currentFrame += advance;
 
-            sprite.uv = new Vector4(
-                sprite.uvWidth,
-                1,
-                sprite.uvWidth * sprite.currentFrame,
-                0);
+            if (sprite.currentFrame >= sprite.frameCount)
+                sprite.currentFrame -= sprite.frameCount;
+
+            float x = sprite.uvWidth * sprite.currentFrame;
+
+            sprite.uv.x = sprite.uvWidth;
+            sprite.uv.y = 1;
+            sprite.uv.z = x;
+            sprite.uv.w = 0;
         }
 
-        float3 pos = transform.Position;
-
-        pos.z = pos.y * .01f;
-
-        transform.Position = pos;
+        transform.Position.z =
+            transform.Position.y * 0.01f;
     }
 }
