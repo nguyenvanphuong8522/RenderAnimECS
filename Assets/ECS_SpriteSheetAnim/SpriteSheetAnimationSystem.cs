@@ -31,6 +31,7 @@ public partial struct SpriteSheetAnimationSystem : ISystem
 
 [BurstCompile]
 [WithAll(typeof(SpriteSheetAnimationData))]
+[WithAll(typeof(VisibleTag))]
 public partial struct AnimationJob : IJobEntity
 {
     public float deltaTime;
