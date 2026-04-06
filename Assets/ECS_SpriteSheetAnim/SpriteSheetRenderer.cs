@@ -11,20 +11,14 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     private ComputeBuffer uvBuffer;
     private ComputeBuffer argsBuffer;
 
-
     static NativeArray<Matrix4x4> matrixArray;
     static NativeArray<float4> uvArray;
     private NativeArray<uint> args;
-
 
     private Material material;
     private Mesh mesh;
 
     const int MAX = 1_000_000;
-
-    private Camera cam;
-    public float height;
-    public float width;
 
     protected override void OnCreate()
     {
@@ -33,8 +27,6 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         matrixBuffer = new ComputeBuffer(MAX, 64);
         uvBuffer = new ComputeBuffer(MAX, 16);
         argsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
-
-
 
         matrixArray = new NativeArray<Matrix4x4>(MAX, Allocator.Persistent);
         uvArray = new NativeArray<float4>(MAX, Allocator.Persistent);
@@ -62,46 +54,20 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
         if (gameHandler == null) return;
 
-        if (cam == null)
-        {
-            cam = Camera.main;
-
-            height = cam.orthographicSize;
-            width = height * cam.aspect;
-            mesh = gameHandler.quadMesh;
-            material = gameHandler.walkingSpriteSheetMaterial;
-        }
-
-
-
-
-
-        Vector3 camPos = cam.transform.position;
-        float minX = camPos.x - width;
-        float maxX = camPos.x + width;
-
-        float minY = camPos.y - height;
-        float maxY = camPos.y + height;
+        mesh = gameHandler.quadMesh;
+        material = gameHandler.walkingSpriteSheetMaterial;
         int index = 0;
 
-
-
-        Entities
+        Entities.WithAll<VisibleTag>()
         .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
             float3 pos = transform.Position;
-
-            if (pos.x < minX) return;
-            if (pos.x > maxX) return;
-            if (pos.y < minY) return;
-            if (pos.y > maxY) return;
 
             matrixArray[index] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
 
             uvArray[index] = sprite.uv;
 
             index++;
-
         }).WithoutBurst().Run();
 
         if (index == 0) return;
@@ -119,8 +85,8 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         args[3] = mesh.GetBaseVertex(0);
         args[4] = 0;
         argsBuffer.SetData(args);
-        Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
 
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
 
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
     }

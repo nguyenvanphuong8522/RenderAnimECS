@@ -25,7 +25,7 @@ public class GameHandler : MonoBehaviour
     {
 
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData));
+        EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData), typeof(VisibleTag), typeof(SpatialCell));
 
         NativeArray<Entity> entityArray = new NativeArray<Entity>(AmountEntity, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
