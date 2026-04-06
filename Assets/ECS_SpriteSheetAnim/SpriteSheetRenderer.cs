@@ -11,8 +11,8 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     private ComputeBuffer uvBuffer;
     private ComputeBuffer argsBuffer;
 
-    static NativeArray<Matrix4x4> matrixArray;
-    static NativeArray<float4> uvArray;
+    NativeArray<Matrix4x4> matrixArray;
+    NativeArray<float4> uvArray;
     private NativeArray<uint> args;
 
     private Material material;
@@ -57,24 +57,25 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         mesh = gameHandler.quadMesh;
         material = gameHandler.walkingSpriteSheetMaterial;
         int index = 0;
-
+        var matrixArrCopy = matrixArray;
+        var uvArrCopy = uvArray;
         Entities.WithAll<VisibleTag>()
         .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
             float3 pos = transform.Position;
 
-            matrixArray[index] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
+            matrixArrCopy[index] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
 
-            uvArray[index] = sprite.uv;
+            uvArrCopy[index] = sprite.uv;
 
             index++;
-        }).WithoutBurst().Run();
+        }).Run();
 
         if (index == 0) return;
 
-        matrixBuffer.SetData(matrixArray, 0, 0, index);
+        matrixBuffer.SetData(matrixArrCopy, 0, 0, index);
 
-        uvBuffer.SetData(uvArray, 0, 0, index);
+        uvBuffer.SetData(uvArrCopy, 0, 0, index);
 
         material.SetBuffer("_Matrices", matrixBuffer);
         material.SetBuffer("_UVData", uvBuffer);
