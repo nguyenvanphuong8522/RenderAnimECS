@@ -13,7 +13,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
 
     static NativeArray<Matrix4x4> matrixArray;
-    static NativeArray<Vector4> uvArray;
+    static NativeArray<float4> uvArray;
     private NativeArray<uint> args;
 
 
@@ -37,7 +37,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
 
         matrixArray = new NativeArray<Matrix4x4>(MAX, Allocator.Persistent);
-        uvArray = new NativeArray<Vector4>(MAX, Allocator.Persistent);
+        uvArray = new NativeArray<float4>(MAX, Allocator.Persistent);
         args = new NativeArray<uint>(5, Allocator.Persistent);
     }
     protected override void OnDestroy()

@@ -10,7 +10,7 @@ public struct SpriteSheetAnimationData : IComponentData
     public int frameCount;
     public float frameTimer;
     public float frameTimerMax;
-    public Vector4 uv;
+    public float4 uv;
     public float uvWidth;
     public float invFrameTimerMax;
 }
@@ -30,6 +30,7 @@ public partial struct SpriteSheetAnimationSystem : ISystem
 }
 
 [BurstCompile]
+[WithAll(typeof(SpriteSheetAnimationData))]
 public partial struct AnimationJob : IJobEntity
 {
     public float deltaTime;
