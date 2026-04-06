@@ -39,9 +39,9 @@ public partial struct SpatialHashJob : IJobEntity
         float3 pos = transform.Position;
 
         int2 newCell;
-        newCell.x = (int)math.floor(pos.x / cellSize);
+        newCell.x = (int)math.ceil(pos.x / cellSize);
 
-        newCell.y = (int)math.floor(pos.y / cellSize);
+        newCell.y = (int)math.ceil(pos.y / cellSize);
 
         cell.cell = newCell;
     }
