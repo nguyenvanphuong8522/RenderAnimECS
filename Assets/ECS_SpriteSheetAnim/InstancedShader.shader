@@ -4,7 +4,6 @@
     {
         _MainTex ("Texture", 2D)="white"{}
     }
-
     SubShader
     {
         Tags{"RenderType"="Transparent"
@@ -43,26 +42,19 @@
                 float2 uv:TEXCOORD0;
             };
 
-            v2f vert(
-                appdata v,
-                uint id:SV_InstanceID)
+            v2f vert(appdata v, uint id:SV_InstanceID)
             {
                 v2f o;
 
-                float4x4 m =
-                    _Matrices[id];
+                float4x4 m = _Matrices[id];
 
-                float4 pos =
-                    mul(m,v.vertex);
+                float4 pos = mul(m,v.vertex);
 
-                o.vertex =
-                    UnityObjectToClipPos(pos);
+                o.vertex = UnityObjectToClipPos(pos);
 
-                float4 uv =
-                    _UVData[id];
+                float4 uv = _UVData[id];
 
-                o.uv =
-                    v.uv*uv.xy+uv.zw;
+                o.uv = v.uv*uv.xy+uv.zw;
 
                 return o;
             }

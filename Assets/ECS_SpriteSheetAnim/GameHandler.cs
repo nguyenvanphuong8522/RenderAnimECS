@@ -9,7 +9,7 @@ public class GameHandler : MonoBehaviour
     private static GameHandler instance;
     public Mesh quadMesh;
     public Material walkingSpriteSheetMaterial;
-
+    public Texture currentTexture;
     public int FrameCount;
     public float FrameTimerMax = 0.1f;
     public int AmountEntity;
@@ -40,7 +40,8 @@ public class GameHandler : MonoBehaviour
             entityManager.SetComponentData(entity,
                 new LocalTransform
                 {
-                    Position = new float3(x, y, 0)
+                    Position = new float3(x, y, 0),
+                    Scale = 1
                 }
             );
 
