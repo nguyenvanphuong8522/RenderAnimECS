@@ -77,6 +77,13 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         matrices.Dispose();
         uvs.Dispose();
 
+        DrawMesh(mesh, material, argsBuffer, mpb, count, args);
+    }
+
+
+
+    private static void DrawMesh(Mesh mesh, Material material, ComputeBuffer argsBuffer, MaterialPropertyBlock mpb, int count, NativeArray<uint> args)
+    {
         args[0] = mesh.GetIndexCount(0);
         args[1] = (uint)count;
         args[2] = mesh.GetIndexStart(0);
