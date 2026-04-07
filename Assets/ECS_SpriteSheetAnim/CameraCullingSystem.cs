@@ -30,11 +30,11 @@ public partial struct CameraCullingSystem : ISystem
         int2 minCell;
         int2 maxCell;
 
-        minCell.x = (int)math.ceil((camPos.x - widthHalf) / cellSize);
-        maxCell.x = (int)math.ceil((camPos.x + widthHalf) / cellSize);
+        minCell.x = (int)math.floor((camPos.x - widthHalf) / cellSize);
+        maxCell.x = (int)math.floor((camPos.x + widthHalf) / cellSize);
 
-        minCell.y = (int)math.ceil((camPos.y - heightHalf) / cellSize);
-        maxCell.y = (int)math.ceil((camPos.y + heightHalf) / cellSize);
+        minCell.y = (int)math.floor((camPos.y - heightHalf) / cellSize);
+        maxCell.y = (int)math.floor((camPos.y + heightHalf) / cellSize);
 
         int padding = 2;
         minCell -= padding;

@@ -36,13 +36,7 @@ public partial struct SpatialHashJob : IJobEntity
 
     public void Execute(ref SpatialCell cell, in LocalTransform transform)
     {
-        float3 pos = transform.Position;
-
-        int2 newCell;
-        newCell.x = (int)math.ceil(pos.x / cellSize);
-
-        newCell.y = (int)math.ceil(pos.y / cellSize);
-
-        cell.cell = newCell;
+        float2 pos2D = transform.Position.xy;
+        cell.cell = cell.cell = (int2)math.floor(pos2D / cellSize); ;
     }
 }
