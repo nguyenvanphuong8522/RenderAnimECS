@@ -539,14 +539,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2e6563ceae3b6f4fbdf765e0bc12ab4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameHandler
-  quadMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   walkingSpriteSheetMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
-  currentTexture: {fileID: 2800000, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
-  FrameCount: 14
-  FrameTimerMax: 0.05
-  AmountEntity: 1000000
-  XRange: 400
-  YRange: 400
+  AmountEntity: 10000
+  XRange: 30
+  YRange: 50
+  SheetData: {fileID: 11400000, guid: f1776b0d60fb547458f0a2583cdb1460, type: 2}
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0

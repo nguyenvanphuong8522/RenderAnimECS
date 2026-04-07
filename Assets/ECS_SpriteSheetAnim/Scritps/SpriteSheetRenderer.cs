@@ -17,7 +17,6 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
     private Material material;
     private Mesh mesh;
-    const int MAX = 1_000_000;
     private MaterialPropertyBlock mpb;
 
     private GameHandler gameHandler;
@@ -25,9 +24,6 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     protected override void OnCreate()
     {
         RequireForUpdate<SpriteSheetAnimationData>();
-
-        matrixBuffer = new ComputeBuffer(MAX, 64);
-        uvBuffer = new ComputeBuffer(MAX, 16);
         argsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
         args = new NativeArray<uint>(5, Allocator.Persistent);
         mpb = new MaterialPropertyBlock();
@@ -48,6 +44,9 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         if (gameHandler == null)
         {
             gameHandler = GameHandler.GetInstance();
+            int amountEntity = gameHandler.AmountEntity;
+            matrixBuffer = new ComputeBuffer(amountEntity, 64);
+            uvBuffer = new ComputeBuffer(amountEntity, 16);
             material = gameHandler.walkingSpriteSheetMaterial;
         }
 
@@ -64,22 +63,21 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         }).Run();
 
         int count = matrices.Length;
+        if (count > 0)
+        {
+            matrixBuffer.SetData(matrices.AsArray());
+            uvBuffer.SetData(uvs.AsArray());
 
-        if (count == 0) return;
+            material.SetBuffer("_Matrices", matrixBuffer);
+            material.SetBuffer("_UVData", uvBuffer);
 
-        matrixBuffer.SetData(matrices.AsArray());
-        uvBuffer.SetData(uvs.AsArray());
+            mpb.SetTexture("_MainTex", gameHandler.SheetData.Texture);
 
-        material.SetBuffer("_Matrices", matrixBuffer);
-        material.SetBuffer("_UVData", uvBuffer);
-        mpb.SetTexture("_MainTex", gameHandler.currentTexture);
-
+            DrawMesh(mesh, material, argsBuffer, mpb, count, args);
+        }
         matrices.Dispose();
         uvs.Dispose();
-
-        DrawMesh(mesh, material, argsBuffer, mpb, count, args);
     }
-
 
 
     private static void DrawMesh(Mesh mesh, Material material, ComputeBuffer argsBuffer, MaterialPropertyBlock mpb, int count, NativeArray<uint> args)

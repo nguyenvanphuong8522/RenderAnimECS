@@ -3,19 +3,21 @@ using Unity.Entities;
 using Unity.Collections;
 using Unity.Transforms;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 public class GameHandler : MonoBehaviour
 {
     private static GameHandler instance;
-    public Mesh quadMesh;
     public Material walkingSpriteSheetMaterial;
-    public Texture currentTexture;
-    public int FrameCount;
-    public float FrameTimerMax = 0.1f;
     public int AmountEntity;
 
     public float XRange;
     public float YRange;
+
+    public ScriptableSpriteSheet SheetData;
+    public Texture2D[] EnemyTextures;
+
+
     private void Awake()
     {
         instance = this;
@@ -46,7 +48,8 @@ public class GameHandler : MonoBehaviour
             );
 
 
-
+            int FrameCount = SheetData.FrameCount;
+            float FrameTimerMax = SheetData.FrameTimerMax;
             entityManager.SetComponentData(entity,
                 new SpriteSheetAnimationData
                 {

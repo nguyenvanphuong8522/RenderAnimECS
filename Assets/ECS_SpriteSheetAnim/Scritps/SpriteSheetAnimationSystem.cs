@@ -13,6 +13,7 @@ public struct SpriteSheetAnimationData : IComponentData
     public float4 uv;
     public float uvWidth;
     public float invFrameTimerMax;
+    public int textureId;
 }
 
 [BurstCompile]
