@@ -70,10 +70,19 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         Entities.WithAll<VisibleTag>()
         .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
-            int index = sprite.textureIndex; // Dùng textureIndex
+            int index = sprite.textureIndex;
             if (index >= 0 && index < batchCount)
             {
-                matricesArray[index].Add(float4x4.TRS(transform.Position, transform.Rotation, Vector3.one * transform.Scale));
+                // Tính toán lại Scale dựa trên kích thước thực của Sprite frame
+                // transform.Scale là scale chung (ví dụ to lên 1.5 lần)
+                // sprite.currentSize là tỉ lệ gốc của frame đó
+                float3 actualScale = new float3(
+                    sprite.currentSize.x * transform.Scale,
+                    sprite.currentSize.y * transform.Scale,
+                    transform.Scale // Z scale không quá quan trọng với 2D
+                );
+
+                matricesArray[index].Add(float4x4.TRS(transform.Position, transform.Rotation, actualScale));
                 uvsArray[index].Add(sprite.currentUV);
             }
         }).Run();

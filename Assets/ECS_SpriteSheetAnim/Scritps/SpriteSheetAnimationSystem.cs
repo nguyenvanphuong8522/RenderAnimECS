@@ -16,7 +16,7 @@ public struct SpriteSheetAnimationData : IComponentData
 
     // Lưu UV hiện tại để Render System lấy ra
     public float4 currentUV;
-
+    public float2 currentSize;
     // Tham chiếu đến dữ liệu mảng UV (BlobAsset giúp truy cập cực nhanh trong Burst)
     public BlobAssetReference<SpriteUVBlob> uvArrayBlob;
 }
@@ -24,6 +24,7 @@ public struct SpriteSheetAnimationData : IComponentData
 public struct SpriteUVBlob
 {
     public BlobArray<float4> uvs;
+    public BlobArray<float2> sizes;
 }
 
 
@@ -61,12 +62,11 @@ public partial struct AnimationJob : IJobEntity
             sprite.frameTimer -= advance * sprite.frameTimerMax;
             sprite.currentFrame = (sprite.currentFrame + advance) % sprite.frameCount;
 
-            // Lấy UV từ BlobAsset dựa trên currentFrame
-            // float4 này chứa: x (offset X), y (offset Y), z (tỉ lệ X), w (tỉ lệ Y) tùy theo Shader của bạn
+            // Cập nhật cả UV và Size mới
             sprite.currentUV = sprite.uvArrayBlob.Value.uvs[sprite.currentFrame];
+            sprite.currentSize = sprite.uvArrayBlob.Value.sizes[sprite.currentFrame];
         }
 
-        // Giữ nguyên logic sorting Z
         transform.Position.z = transform.Position.y * 0.01f;
     }
 }

@@ -544,6 +544,17 @@ MonoBehaviour:
   YRange: 50
   baseWalkingMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   enemyConfigs:
+  - texture: {fileID: 2800000, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    sprites:
+    - {fileID: -696143763, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1239039181, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 176800836, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1995330411, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1289852462, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: -131794890, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1616979146, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 41392579, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    frameTimerMax: 0.05
   - texture: {fileID: 2800000, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
     sprites:
     - {fileID: -2054922230, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
@@ -568,17 +579,6 @@ MonoBehaviour:
     - {fileID: -2068034931, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     - {fileID: -129176210, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     frameTimerMax: 0.05
-  - texture: {fileID: 2800000, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    sprites:
-    - {fileID: -696143763, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 1239039181, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 176800836, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 1995330411, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 1289852462, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: -131794890, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 1616979146, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    - {fileID: 41392579, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
-    frameTimerMax: 0.1
   - texture: {fileID: 2800000, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
     sprites:
     - {fileID: -334951684, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}

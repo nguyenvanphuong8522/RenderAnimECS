@@ -68,15 +68,22 @@ public class GameHandler : MonoBehaviour
 
             int FrameCount = enemyConfig.sprites.Length;
             float FrameTimerMax = enemyConfig.frameTimerMax;
+
+            int startFrame = UnityEngine.Random.Range(0, FrameCount);
             entityManager.SetComponentData(entity,
                 new SpriteSheetAnimationData
                 {
                     textureIndex = indexEnemy,
-                    currentFrame = UnityEngine.Random.Range(0, FrameCount),
+                    currentFrame = startFrame,
                     frameCount = FrameCount,
                     frameTimer = 0,
                     frameTimerMax = FrameTimerMax,
                     invFrameTimerMax = 1f / FrameTimerMax,
+
+                    // KHỞI TẠO NGAY GIÁ TRỊ BAN ĐẦU
+                    currentUV = uvBlobs[indexEnemy].Value.uvs[startFrame],
+                    currentSize = uvBlobs[indexEnemy].Value.sizes[startFrame],
+
                     uvArrayBlob = uvBlobs[indexEnemy]
                 }
             );
@@ -91,25 +98,27 @@ public class GameHandler : MonoBehaviour
 
         int frameCount = config.sprites.Length;
         BlobBuilderArray<float4> arrayBuilder = builder.Allocate(ref uvBlob.uvs, frameCount);
+        BlobBuilderArray<float2> sizeBuilder = builder.Allocate(ref uvBlob.sizes, frameCount); // Cấp phát bộ nhớ cho mảng Size
 
-        // Lấy kích thước ảnh gốc để tính toán UV (0.0 -> 1.0)
         float texWidth = config.texture.width;
         float texHeight = config.texture.height;
 
         for (int i = 0; i < frameCount; i++)
         {
             Sprite spr = config.sprites[i];
-
-            // Lấy tọa độ pixel của frame hiện tại trên tấm ảnh
             Rect rect = spr.textureRect;
 
-            // Chuyển đổi từ tọa độ Pixel sang tọa độ UV (chuẩn hóa từ 0 đến 1)
+            // Tính UV
             float x = rect.x / texWidth;
             float y = rect.y / texHeight;
             float width = rect.width / texWidth;
             float height = rect.height / texHeight;
-
             arrayBuilder[i] = new float4(x, y, width, height);
+
+            // Tính Kích thước (Size) theo World Space
+            // spr.pixelsPerUnit mặc định của Unity thường là 100
+            float ppu = spr.pixelsPerUnit;
+            sizeBuilder[i] = new float2(rect.width / ppu, rect.height / ppu);
         }
 
         var result = builder.CreateBlobAssetReference<SpriteUVBlob>(Allocator.Persistent);
