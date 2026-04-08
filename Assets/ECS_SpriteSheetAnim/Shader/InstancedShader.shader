@@ -47,14 +47,18 @@
                 v2f o;
 
                 float4x4 m = _Matrices[id];
+    
+                // Lưu ý: v.vertex đã là world space do nhân với m (matrix TRS của entity)
+                // Nhưng UnityObjectToClipPos kỳ vọng local space. 
+                // Nếu bạn đã nhân m ở ngoài, hãy dùng UnityWorldToClipPos hoặc mul(UNITY_MATRIX_VP, pos)
+                float4 worldPos = mul(m, v.vertex);
+                o.vertex = mul(UNITY_MATRIX_VP, worldPos);
 
-                float4 pos = mul(m,v.vertex);
+                float4 uvData = _UVData[id];
 
-                o.vertex = UnityObjectToClipPos(pos);
-
-                float4 uv = _UVData[id];
-
-                o.uv = v.uv*uv.xy+uv.zw;
+                // CÔNG THỨC MỚI:
+                // v.uv (0->1) * uvData.zw (kích thước frame) + uvData.xy (tọa độ gốc của frame)
+                o.uv = v.uv * uvData.zw + uvData.xy;
 
                 return o;
             }

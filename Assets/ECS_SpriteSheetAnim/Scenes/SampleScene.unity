@@ -539,11 +539,53 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2e6563ceae3b6f4fbdf765e0bc12ab4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameHandler
-  walkingSpriteSheetMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   AmountEntity: 1000
   XRange: 30
   YRange: 50
-  SheetData: {fileID: 11400000, guid: 96b8c4cc89d6e3c4193fd7822e096df9, type: 2}
+  baseWalkingMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
+  enemyConfigs:
+  - texture: {fileID: 2800000, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
+    sprites:
+    - {fileID: -2054922230, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
+    - {fileID: -1733524856, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
+    - {fileID: 1119828685, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
+    - {fileID: -2012929774, guid: de475014783b7fc439c546e86b28d1f4, type: 3}
+    frameTimerMax: 0.1
+  - texture: {fileID: 2800000, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    sprites:
+    - {fileID: -1200485929, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -1233337071, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -603249784, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: 770831436, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: 1414375561, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -277954949, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -1016795783, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -749268121, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: 773188367, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -1544674161, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -1006872851, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: 1996229146, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -2068034931, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    - {fileID: -129176210, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+    frameTimerMax: 0.05
+  - texture: {fileID: 2800000, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    sprites:
+    - {fileID: -696143763, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1239039181, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 176800836, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1995330411, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1289852462, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: -131794890, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 1616979146, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    - {fileID: 41392579, guid: 7280422d56c47de4d9a604be2e2ebe40, type: 3}
+    frameTimerMax: 0.1
+  - texture: {fileID: 2800000, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
+    sprites:
+    - {fileID: -334951684, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
+    - {fileID: 1350929302, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
+    - {fileID: 1411562125, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
+    - {fileID: 1683981616, guid: 80ed33e5e7870af468f277ede18a6556, type: 3}
+    frameTimerMax: 0.1
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0
@@ -551,59 +593,6 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1459524505}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1596673244
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1596673246}
-  - component: {fileID: 1596673245}
-  m_Layer: 0
-  m_Name: GameSubScene
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1596673245
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1596673244}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45a335734b1572644a6a5d09d87adc65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Scenes::Unity.Scenes.SubScene
-  _SceneAsset: {fileID: 102900000, guid: 6d605447277115149ab1a0fb577411b0, type: 3}
-  _HierarchyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  AutoLoadScene: 1
-  _SceneGUID:
-    Value:
-      x: 1950680790
-      y: 1095833458
-      z: 3205110697
-      w: 185681781
---- !u!4 &1596673246
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1596673244}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -620,4 +609,3 @@ SceneRoots:
   - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 1459524507}
-  - {fileID: 1596673246}

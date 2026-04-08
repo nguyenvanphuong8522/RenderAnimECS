@@ -3,23 +3,27 @@ using Unity.Transforms;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-
+using System.Collections.Generic;
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
-    private ComputeBuffer matrixBuffer;
-    private ComputeBuffer uvBuffer;
+    private class BatchData
+    {
+        public ComputeBuffer matrixBuffer;
+        public ComputeBuffer uvBuffer;
+        public Texture2D texture; // Chỉ lưu Texture, không lưu Material nữa
+        public int maxInstances;
+    }
+
     private ComputeBuffer argsBuffer;
-
-
     private NativeArray<uint> args;
-
-    private Material material;
+    private Material baseMaterial; // Material duy nhất
     private Mesh mesh;
     private MaterialPropertyBlock mpb;
-
     private GameHandler gameHandler;
+
+    private List<BatchData> batches = new List<BatchData>();
 
     protected override void OnCreate()
     {
@@ -29,14 +33,17 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         mpb = new MaterialPropertyBlock();
         mesh = MeshUtils.CreateQuad();
     }
+
     protected override void OnDestroy()
     {
-        matrixBuffer.Release();
-        uvBuffer.Release();
         argsBuffer.Release();
+        if (args.IsCreated) args.Dispose();
 
-        if (args.IsCreated)
-            args.Dispose();
+        foreach (var batch in batches)
+        {
+            batch.matrixBuffer?.Release();
+            batch.uvBuffer?.Release();
+        }
     }
 
     protected override void OnUpdate()
@@ -44,41 +51,81 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         if (gameHandler == null)
         {
             gameHandler = GameHandler.GetInstance();
-            int amountEntity = gameHandler.AmountEntity;
-            matrixBuffer = new ComputeBuffer(amountEntity, 64);
-            uvBuffer = new ComputeBuffer(amountEntity, 16);
-            material = gameHandler.walkingSpriteSheetMaterial;
+            baseMaterial = gameHandler.baseWalkingMaterial; // Lấy material gốc
+            InitBatches(gameHandler);
         }
 
-        var matrices = new NativeList<float4x4>(Allocator.Temp);
-        var uvs = new NativeList<float4>(Allocator.Temp);
+        int batchCount = batches.Count;
+        if (batchCount == 0) return;
+
+        var matricesArray = new NativeArray<NativeList<float4x4>>(batchCount, Allocator.Temp);
+        var uvsArray = new NativeArray<NativeList<float4>>(batchCount, Allocator.Temp);
+
+        for (int i = 0; i < batchCount; i++)
+        {
+            matricesArray[i] = new NativeList<float4x4>(Allocator.Temp);
+            uvsArray[i] = new NativeList<float4>(Allocator.Temp);
+        }
 
         Entities.WithAll<VisibleTag>()
         .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
-            float3 pos = transform.Position;
-            float3 scale = Vector3.one * transform.Scale;
-            matrices.Add(float4x4.TRS(transform.Position, transform.Rotation, scale));
-            uvs.Add(sprite.uv);
+            int index = sprite.textureIndex; // Dùng textureIndex
+            if (index >= 0 && index < batchCount)
+            {
+                matricesArray[index].Add(float4x4.TRS(transform.Position, transform.Rotation, Vector3.one * transform.Scale));
+                uvsArray[index].Add(sprite.currentUV);
+            }
         }).Run();
 
-        int count = matrices.Length;
-        if (count > 0)
+        for (int i = 0; i < batchCount; i++)
         {
-            matrixBuffer.SetData(matrices.AsArray());
-            uvBuffer.SetData(uvs.AsArray());
+            int count = matricesArray[i].Length;
+            if (count > 0)
+            {
+                var batch = batches[i];
 
-            material.SetBuffer("_Matrices", matrixBuffer);
-            material.SetBuffer("_UVData", uvBuffer);
+                if (count > batch.maxInstances)
+                {
+                    batch.matrixBuffer?.Release();
+                    batch.uvBuffer?.Release();
 
-            mpb.SetTexture("_MainTex", gameHandler.SheetData.Texture);
+                    batch.maxInstances = count + 500;
+                    batch.matrixBuffer = new ComputeBuffer(batch.maxInstances, 64);
+                    batch.uvBuffer = new ComputeBuffer(batch.maxInstances, 16);
+                }
 
-            DrawMesh(mesh, material, argsBuffer, mpb, count, args);
+                batch.matrixBuffer.SetData(matricesArray[i].AsArray(), 0, 0, count);
+                batch.uvBuffer.SetData(uvsArray[i].AsArray(), 0, 0, count);
+
+                // QUAN TRỌNG: Đẩy TẤT CẢ mọi thứ vào MaterialPropertyBlock (mpb)
+                mpb.SetBuffer("_Matrices", batch.matrixBuffer);
+                mpb.SetBuffer("_UVData", batch.uvBuffer);
+                mpb.SetTexture("_MainTex", batch.texture); // Ghi đè Texture cho batch này
+
+                // Truyền baseMaterial và mpb vào hàm vẽ
+                DrawMesh(mesh, baseMaterial, argsBuffer, mpb, count, args);
+            }
+
+            matricesArray[i].Dispose();
+            uvsArray[i].Dispose();
         }
-        matrices.Dispose();
-        uvs.Dispose();
+
+        matricesArray.Dispose();
+        uvsArray.Dispose();
     }
 
+    private void InitBatches(GameHandler handler)
+    {
+        for (int i = 0; i < handler.enemyConfigs.Length; i++)
+        {
+            batches.Add(new BatchData
+            {
+                texture = handler.enemyConfigs[i].texture,
+                maxInstances = 0
+            });
+        }
+    }
 
     private static void DrawMesh(Mesh mesh, Material material, ComputeBuffer argsBuffer, MaterialPropertyBlock mpb, int count, NativeArray<uint> args)
     {
@@ -90,6 +137,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         argsBuffer.SetData(args);
 
         Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
+        // mpb được áp dụng tại đây, thay đổi _MainTex, _Matrices và _UVData ngay trước khi GPU vẽ
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, mpb);
     }
 }
