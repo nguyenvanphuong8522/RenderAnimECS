@@ -15,7 +15,6 @@ public class GameHandler : MonoBehaviour
     public float YRange;
 
     public ScriptableSpriteSheet SheetData;
-    public Texture2D[] EnemyTextures;
 
 
     private void Awake()
