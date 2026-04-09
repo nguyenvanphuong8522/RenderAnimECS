@@ -3,28 +3,17 @@ using Unity.Transforms;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using System.Collections.Generic;
-
-public class BatchData
-{
-    public ComputeBuffer matrixBuffer;
-    public ComputeBuffer uvBuffer;
-    public Texture2D texture;
-    public int maxInstances;
-}
-
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
+    private ComputeBuffer matrixBuffer;
+    private ComputeBuffer uvBuffer;
     private ComputeBuffer argsBuffer;
     private NativeArray<uint> args;
-    private Material baseMaterial;
     private Mesh mesh;
     private MaterialPropertyBlock mpb;
-    private GameHandler gameHandler;
-
-    private List<BatchData> batches = new List<BatchData>();
+    private int maxInstances = 0;
 
     protected override void OnCreate()
     {
@@ -37,104 +26,73 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
     protected override void OnDestroy()
     {
-        argsBuffer.Release();
+        argsBuffer?.Release();
+        matrixBuffer?.Release();
+        uvBuffer?.Release();
         if (args.IsCreated) args.Dispose();
-
-        foreach (var batch in batches)
-        {
-            batch.matrixBuffer?.Release();
-            batch.uvBuffer?.Release();
-        }
     }
 
     protected override void OnUpdate()
     {
-        if (gameHandler == null)
+        var gameHandler = GameHandler.GetInstance();
+        if (gameHandler == null || gameHandler.mainAtlasTexture == null) return;
+
+        // 1. Tạo Query để lấy toàn bộ Entity có VisibleTag
+        EntityQuery query = GetEntityQuery(ComponentType.ReadOnly<LocalTransform>(), ComponentType.ReadOnly<SpriteSheetAnimationData>(), ComponentType.ReadOnly<VisibleTag>());
+        int count = query.CalculateEntityCount();
+        if (count == 0) return;
+
+        // 2. Kiểm tra và mở rộng Buffer nếu số lượng Entity tăng lên
+        UpdateBufferCapacity(count);
+
+        // 3. Thu thập dữ liệu dùng NativeArray (Sử dụng TempJob để xử lý trong Job)
+        var matrices = new NativeArray<float4x4>(count, Allocator.TempJob);
+        var uvs = new NativeArray<float4>(count, Allocator.TempJob);
+
+        // Sử dụng ScheduleParallel để copy dữ liệu cực nhanh từ ECS sang mảng render
+        Entities.WithAll<VisibleTag>().ForEach((int entityInQueryIndex, in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
-            gameHandler = GameHandler.GetInstance();
-            baseMaterial = gameHandler.baseWalkingMaterial;
-            InitBatches(gameHandler);
+            float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, 1f);
+            matrices[entityInQueryIndex] = float4x4.TRS(transform.Position, transform.Rotation, actualScale);
+            uvs[entityInQueryIndex] = sprite.currentUV;
+        }).ScheduleParallel();
+
+        // Đợi Job hoàn thành để nạp dữ liệu lên GPU
+        this.Dependency.Complete();
+
+        // 4. Đẩy dữ liệu lên GPU (1 lần duy nhất)
+        matrixBuffer.SetData(matrices);
+        uvBuffer.SetData(uvs);
+
+        // 5. Cài đặt MaterialPropertyBlock với Atlas duy nhất
+        mpb.SetBuffer("_Matrices", matrixBuffer);
+        mpb.SetBuffer("_UVData", uvBuffer);
+        // Thay vì lấy biến lưu sẵn, hãy lấy trực tiếp từ config để đảm bảo đúng trang Atlas
+        if (gameHandler.enemyConfigs.enemyAnimConfigs.Count > 0)
+        {
+            var tex = gameHandler.enemyConfigs.enemyAnimConfigs[0].sprites[0].texture;
+            mpb.SetTexture("_MainTex", tex);
         }
+        // 6. Lệnh vẽ DUY NHẤT
+        DrawMesh(count, gameHandler.baseWalkingMaterial);
 
-        int batchCount = batches.Count;
-        if (batchCount == 0) return;
-
-        var matricesArray = new NativeArray<NativeList<float4x4>>(batchCount, Allocator.Temp);
-        var uvsArray = new NativeArray<NativeList<float4>>(batchCount, Allocator.Temp);
-
-        for (int i = 0; i < batchCount; i++)
-        {
-            matricesArray[i] = new NativeList<float4x4>(Allocator.Temp);
-            uvsArray[i] = new NativeList<float4>(Allocator.Temp);
-        }
-
-
-
-        Entities.WithAll<VisibleTag>()
-        .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
-        {
-            int index = sprite.textureIndex;
-            if (index >= 0 && index < batchCount)
-            {
-                // Tính toán lại Scale dựa trên kích thước thực của Sprite frame
-                // transform.Scale là scale chung (ví dụ to lên 1.5 lần)
-                // sprite.currentSize là tỉ lệ gốc của frame đó
-                float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, transform.Scale);
-                matricesArray[index].Add(float4x4.TRS(transform.Position, transform.Rotation, actualScale));
-                uvsArray[index].Add(sprite.currentUV);
-            }
-        }).Run();
-
-        for (int i = 0; i < batchCount; i++)
-        {
-            int count = matricesArray[i].Length;
-            if (count > 0)
-            {
-                var batch = batches[i];
-
-                if (count > batch.maxInstances)
-                {
-                    batch.matrixBuffer?.Release();
-                    batch.uvBuffer?.Release();
-
-                    batch.maxInstances = count + 500;
-                    batch.matrixBuffer = new ComputeBuffer(batch.maxInstances, 64);
-                    batch.uvBuffer = new ComputeBuffer(batch.maxInstances, 16);
-                }
-
-                batch.matrixBuffer.SetData(matricesArray[i].AsArray(), 0, 0, count);
-                batch.uvBuffer.SetData(uvsArray[i].AsArray(), 0, 0, count);
-
-                // QUAN TRỌNG: Đẩy TẤT CẢ mọi thứ vào MaterialPropertyBlock (mpb)
-                mpb.SetBuffer("_Matrices", batch.matrixBuffer);
-                mpb.SetBuffer("_UVData", batch.uvBuffer);
-                mpb.SetTexture("_MainTex", batch.texture); // Ghi đè Texture cho batch này
-
-                // Truyền baseMaterial và mpb vào hàm vẽ
-                DrawMesh(mesh, baseMaterial, argsBuffer, mpb, count, args);
-            }
-
-            matricesArray[i].Dispose();
-            uvsArray[i].Dispose();
-        }
-
-        matricesArray.Dispose();
-        uvsArray.Dispose();
+        matrices.Dispose();
+        uvs.Dispose();
     }
 
-    private void InitBatches(GameHandler handler)
+    private void UpdateBufferCapacity(int count)
     {
-        for (int i = 0; i < handler.enemyConfigs.enemyAnimConfigs.Count; i++)
+        if (count > maxInstances)
         {
-            batches.Add(new BatchData
-            {
-                texture = handler.enemyConfigs.enemyAnimConfigs[i].texture,
-                maxInstances = 0
-            });
+            matrixBuffer?.Release();
+            uvBuffer?.Release();
+            maxInstances = count + 1000; // Dự phòng để không tạo lại liên tục
+            matrixBuffer = new ComputeBuffer(maxInstances, 64);
+            uvBuffer = new ComputeBuffer(maxInstances, 16);
         }
     }
 
-    private static void DrawMesh(Mesh mesh, Material material, ComputeBuffer argsBuffer, MaterialPropertyBlock mpb, int count, NativeArray<uint> args)
+    private void DrawMesh(int count, Material material)
     {
         args[0] = mesh.GetIndexCount(0);
         args[1] = (uint)count;
@@ -143,8 +101,6 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         args[4] = 0;
         argsBuffer.SetData(args);
 
-        Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
-
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, mpb);
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, new Bounds(Vector3.zero, Vector3.one * 10000), argsBuffer, 0, mpb);
     }
 }
