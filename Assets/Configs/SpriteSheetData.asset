@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: SpriteSheetData
   m_EditorClassIdentifier: Assembly-CSharp::ScriptableSpriteSheet
   enemyAnimConfigs:
-  - texture: {fileID: 2800000, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
+  - atlasIndex: 0
+    texture: {fileID: 2800000, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
     sprites:
     - {fileID: -725400932, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
     - {fileID: -771451090, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
@@ -32,7 +33,21 @@ MonoBehaviour:
     - {fileID: 167295796, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
     - {fileID: -1233812242, guid: 90f370e9b71f90646813f2a7cb4e6160, type: 3}
     frameTimerMax: 0.05
-  - texture: {fileID: 2800000, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
+  - atlasIndex: 0
+    texture: {fileID: 2800000, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    sprites:
+    - {fileID: -2018942801, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: 2094150048, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: -247978585, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: 2043933221, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: 952504535, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: -511378411, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: -462712245, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: -1813600477, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    - {fileID: -1896795923, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
+    frameTimerMax: 0.05
+  - atlasIndex: 0
+    texture: {fileID: 2800000, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     sprites:
     - {fileID: -1200485929, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     - {fileID: -1233337071, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
@@ -48,16 +63,4 @@ MonoBehaviour:
     - {fileID: 1996229146, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     - {fileID: -2068034931, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
     - {fileID: -129176210, guid: a1b6b231b897a2148967fbac4a122f59, type: 3}
-    frameTimerMax: 0.05
-  - texture: {fileID: 2800000, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    sprites:
-    - {fileID: -2018942801, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: 2094150048, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: -247978585, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: 2043933221, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: 952504535, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: -511378411, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: -462712245, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: -1813600477, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
-    - {fileID: -1896795923, guid: bb610913281a43d4bb3bc95b132573eb, type: 3}
     frameTimerMax: 0.05

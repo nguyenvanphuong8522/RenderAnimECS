@@ -5,6 +5,7 @@ using Unity.Transforms;
 
 public struct SpriteSheetAnimationData : IComponentData
 {
+    public int atlasIndex;
     public int textureIndex;
     public int currentFrame;
     public int frameCount;
@@ -64,7 +65,6 @@ public partial struct AnimationJob : IJobEntity
             frameChanged = true;
         }
 
-        // Chỉ đọc từ Blob và gán lại UV/Size nếu frame thực sự thay đổi (Tối ưu hiệu năng)
         if (frameChanged)
         {
             sprite.currentUV = sprite.uvArrayBlob.Value.uvs[sprite.currentFrame];

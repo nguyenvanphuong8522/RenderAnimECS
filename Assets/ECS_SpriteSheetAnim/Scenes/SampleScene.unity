@@ -543,9 +543,11 @@ MonoBehaviour:
   XRange: 400
   YRange: 400
   baseWalkingMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
-  spriteAtlas: {fileID: 100100200, guid: 4ec3b6ee48074a4479a25d7197e173c1, type: 3}
+  spriteAtlases:
+  - {fileID: 100100200, guid: 4ec3b6ee48074a4479a25d7197e173c1, type: 3}
+  - {fileID: 100100200, guid: 497a5e73950567f48aba9230cf35a05f, type: 3}
+  atlasTextures: []
   enemyConfigs: {fileID: 11400000, guid: 96b8c4cc89d6e3c4193fd7822e096df9, type: 2}
-  mainAtlasTexture: {fileID: 0}
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0

@@ -10,6 +10,7 @@ public class ScriptableSpriteSheet : ScriptableObject
 [Serializable]
 public class EnemyAnimConfig
 {
+    public int atlasIndex;
     public Texture2D texture;
     public Sprite[] sprites;
     public float frameTimerMax;

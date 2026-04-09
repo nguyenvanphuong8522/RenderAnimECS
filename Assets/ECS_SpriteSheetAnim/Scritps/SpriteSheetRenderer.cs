@@ -3,17 +3,26 @@ using Unity.Transforms;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using System.Collections.Generic;
+
+// Lớp lưu trữ Buffer riêng cho TỪNG ATLAS
+public class AtlasBatchData
+{
+    public ComputeBuffer matrixBuffer;
+    public ComputeBuffer uvBuffer;
+    public int maxInstances = 0;
+}
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
-    private ComputeBuffer matrixBuffer;
-    private ComputeBuffer uvBuffer;
     private ComputeBuffer argsBuffer;
     private NativeArray<uint> args;
     private Mesh mesh;
     private MaterialPropertyBlock mpb;
-    private int maxInstances = 0;
+
+    private AtlasBatchData[] atlasBatches;
+    private bool isInitialized = false;
 
     protected override void OnCreate()
     {
@@ -24,72 +33,87 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         mesh = MeshUtils.CreateQuad();
     }
 
-    protected override void OnDestroy()
+    private void InitializeBatches(int atlasCount)
     {
-        argsBuffer?.Release();
-        matrixBuffer?.Release();
-        uvBuffer?.Release();
-        if (args.IsCreated) args.Dispose();
+        atlasBatches = new AtlasBatchData[atlasCount];
+        for (int i = 0; i < atlasCount; i++)
+        {
+            atlasBatches[i] = new AtlasBatchData();
+        }
+        isInitialized = true;
     }
 
     protected override void OnUpdate()
     {
         var gameHandler = GameHandler.GetInstance();
-        if (gameHandler == null || gameHandler.mainAtlasTexture == null) return;
+        if (gameHandler == null || gameHandler.atlasTextures == null) return;
 
-        // 1. Tạo Query để lấy toàn bộ Entity có VisibleTag
-        EntityQuery query = GetEntityQuery(ComponentType.ReadOnly<LocalTransform>(), ComponentType.ReadOnly<SpriteSheetAnimationData>(), ComponentType.ReadOnly<VisibleTag>());
-        int count = query.CalculateEntityCount();
-        if (count == 0) return;
+        int atlasCount = gameHandler.atlasTextures.Length;
+        if (atlasCount == 0) return;
 
-        // 2. Kiểm tra và mở rộng Buffer nếu số lượng Entity tăng lên
-        UpdateBufferCapacity(count);
+        if (!isInitialized) InitializeBatches(atlasCount);
 
-        // 3. Thu thập dữ liệu dùng NativeArray (Sử dụng TempJob để xử lý trong Job)
-        var matrices = new NativeArray<float4x4>(count, Allocator.TempJob);
-        var uvs = new NativeArray<float4>(count, Allocator.TempJob);
+        // Tạo mảng các List để chứa data phân loại theo Atlas
+        var matricesArray = new NativeArray<NativeList<float4x4>>(atlasCount, Allocator.TempJob);
+        var uvsArray = new NativeArray<NativeList<float4>>(atlasCount, Allocator.TempJob);
 
-        // Sử dụng ScheduleParallel để copy dữ liệu cực nhanh từ ECS sang mảng render
-        Entities.WithAll<VisibleTag>().ForEach((int entityInQueryIndex, in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
+        for (int i = 0; i < atlasCount; i++)
         {
-            float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, 1f);
-            matrices[entityInQueryIndex] = float4x4.TRS(transform.Position, transform.Rotation, actualScale);
-            uvs[entityInQueryIndex] = sprite.currentUV;
-        }).ScheduleParallel();
-
-        // Đợi Job hoàn thành để nạp dữ liệu lên GPU
-        this.Dependency.Complete();
-
-        // 4. Đẩy dữ liệu lên GPU (1 lần duy nhất)
-        matrixBuffer.SetData(matrices);
-        uvBuffer.SetData(uvs);
-
-        // 5. Cài đặt MaterialPropertyBlock với Atlas duy nhất
-        mpb.SetBuffer("_Matrices", matrixBuffer);
-        mpb.SetBuffer("_UVData", uvBuffer);
-        // Thay vì lấy biến lưu sẵn, hãy lấy trực tiếp từ config để đảm bảo đúng trang Atlas
-        if (gameHandler.enemyConfigs.enemyAnimConfigs.Count > 0)
-        {
-            var tex = gameHandler.enemyConfigs.enemyAnimConfigs[0].sprites[0].texture;
-            mpb.SetTexture("_MainTex", tex);
+            matricesArray[i] = new NativeList<float4x4>(Allocator.TempJob);
+            uvsArray[i] = new NativeList<float4>(Allocator.TempJob);
         }
-        // 6. Lệnh vẽ DUY NHẤT
-        DrawMesh(count, gameHandler.baseWalkingMaterial);
 
-        matrices.Dispose();
-        uvs.Dispose();
-    }
-
-    private void UpdateBufferCapacity(int count)
-    {
-        if (count > maxInstances)
+        // Chạy qua tất cả Entity và đẩy nó vào đúng giỏ (List) của Atlas đó
+        // Dùng .Run() thay vì ScheduleParallel vì chúng ta đang add vào mảng NativeList động
+        Entities.WithAll<VisibleTag>().ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
         {
-            matrixBuffer?.Release();
-            uvBuffer?.Release();
-            maxInstances = count + 1000; // Dự phòng để không tạo lại liên tục
-            matrixBuffer = new ComputeBuffer(maxInstances, 64);
-            uvBuffer = new ComputeBuffer(maxInstances, 16);
+            int aIndex = sprite.atlasIndex;
+            if (aIndex >= 0 && aIndex < atlasCount)
+            {
+                float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, 1f);
+                matricesArray[aIndex].Add(float4x4.TRS(transform.Position, transform.Rotation, actualScale));
+                uvsArray[aIndex].Add(sprite.currentUV);
+            }
+        }).Run();
+
+        // Duyệt qua từng giỏ Atlas và nạp lên GPU vẽ
+        for (int i = 0; i < atlasCount; i++)
+        {
+            int count = matricesArray[i].Length;
+            if (count > 0)
+            {
+                var batch = atlasBatches[i];
+
+                // Mở rộng Buffer nếu thiếu chỗ
+                if (count > batch.maxInstances)
+                {
+                    batch.matrixBuffer?.Release();
+                    batch.uvBuffer?.Release();
+                    batch.maxInstances = count + 1000;
+                    batch.matrixBuffer = new ComputeBuffer(batch.maxInstances, 64);
+                    batch.uvBuffer = new ComputeBuffer(batch.maxInstances, 16);
+                }
+
+                // Gán dữ liệu cho Buffer của Atlas này
+                batch.matrixBuffer.SetData(matricesArray[i].AsArray(), 0, 0, count);
+                batch.uvBuffer.SetData(uvsArray[i].AsArray(), 0, 0, count);
+
+                // Cấu hình Material với Texture của Atlas tương ứng
+                mpb.SetBuffer("_Matrices", batch.matrixBuffer);
+                mpb.SetBuffer("_UVData", batch.uvBuffer);
+                mpb.SetTexture("_MainTex", gameHandler.atlasTextures[i]);
+
+                // Vẽ
+                DrawMesh(count, gameHandler.baseWalkingMaterial);
+            }
+
+            // Giải phóng bộ nhớ tạm
+            matricesArray[i].Dispose();
+            uvsArray[i].Dispose();
         }
+
+        matricesArray.Dispose();
+        uvsArray.Dispose();
     }
 
     private void DrawMesh(int count, Material material)
@@ -102,5 +126,20 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         argsBuffer.SetData(args);
 
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, new Bounds(Vector3.zero, Vector3.one * 10000), argsBuffer, 0, mpb);
+    }
+
+    protected override void OnDestroy()
+    {
+        argsBuffer?.Release();
+        if (args.IsCreated) args.Dispose();
+
+        if (atlasBatches != null)
+        {
+            foreach (var batch in atlasBatches)
+            {
+                batch.matrixBuffer?.Release();
+                batch.uvBuffer?.Release();
+            }
+        }
     }
 }
