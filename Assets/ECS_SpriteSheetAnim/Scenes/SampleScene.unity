@@ -548,6 +548,19 @@ MonoBehaviour:
   - {fileID: 100100200, guid: 497a5e73950567f48aba9230cf35a05f, type: 3}
   atlasTextures: []
   enemyConfigs: {fileID: 11400000, guid: 96b8c4cc89d6e3c4193fd7822e096df9, type: 2}
+  fontAtlas: {fileID: 100100200, guid: e3d2c6d3b12d7c3498a99a1ac8045fcc, type: 3}
+  fontAtlasTexture: {fileID: 0}
+  numberSprites:
+  - {fileID: 1578490065, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 1241778490, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: -1655875385, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 2047138678, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: -1568020919, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 513997167, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 973456152, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 848661585, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: 1385946844, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
+  - {fileID: -807740914, guid: b93291c0c69b3e641a29fc815e3568ec, type: 3}
 --- !u!4 &1459524507
 Transform:
   m_ObjectHideFlags: 0
