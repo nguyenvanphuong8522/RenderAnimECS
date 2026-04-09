@@ -52,7 +52,8 @@ public class GameHandler : MonoBehaviour
     private void Start()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData), typeof(VisibleTag), typeof(SpatialCell));
+        EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData),
+            typeof(VisibleTag), typeof(SpatialCell), typeof(AtlasSharedTag));
 
         NativeArray<Entity> entityArray = new NativeArray<Entity>(AmountEntity, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
@@ -65,6 +66,7 @@ public class GameHandler : MonoBehaviour
             // Lấy ra Atlas Index của enemy này
             int myAtlasIndex = enemyConfig.atlasIndex;
 
+            entityManager.SetSharedComponent(entity, new AtlasSharedTag { atlasIndex = myAtlasIndex });
             float x = UnityEngine.Random.Range(-XRange, XRange);
             float y = UnityEngine.Random.Range(-YRange, YRange);
 

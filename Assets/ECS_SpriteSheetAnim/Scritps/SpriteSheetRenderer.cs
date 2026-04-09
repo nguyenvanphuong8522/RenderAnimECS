@@ -1,9 +1,15 @@
-﻿using Unity.Entities;
-using Unity.Transforms;
+﻿using System.Collections.Generic;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
-using System.Collections.Generic;
+
+public struct AtlasSharedTag : ISharedComponentData
+{
+    public int atlasIndex;
+}
 
 // Lớp lưu trữ Buffer riêng cho TỪNG ATLAS
 public class AtlasBatchData
@@ -13,6 +19,22 @@ public class AtlasBatchData
     public int maxInstances = 0;
 }
 
+[BurstCompile]
+[WithAll(typeof(VisibleTag))]
+public partial struct GatherAtlasDataJob : IJobEntity
+{
+    public NativeArray<float4x4> matrices;
+    public NativeArray<float4> uvs;
+
+    // EntityIndexInQuery là chìa khóa: Nó sẽ đánh số thứ tự từ 0 cho riêng Query của từng Atlas
+    public void Execute([EntityIndexInQuery] int entityInQueryIndex, in LocalTransform transform, in SpriteSheetAnimationData sprite)
+    {
+        float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, 1f);
+        matrices[entityInQueryIndex] = float4x4.TRS(transform.Position, transform.Rotation, actualScale);
+        uvs[entityInQueryIndex] = sprite.currentUV;
+    }
+}
+
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
@@ -20,9 +42,8 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     private NativeArray<uint> args;
     private Mesh mesh;
     private MaterialPropertyBlock mpb;
-
     private AtlasBatchData[] atlasBatches;
-    private bool isInitialized = false;
+    private EntityQuery atlasQuery;
 
     protected override void OnCreate()
     {
@@ -31,16 +52,14 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         args = new NativeArray<uint>(5, Allocator.Persistent);
         mpb = new MaterialPropertyBlock();
         mesh = MeshUtils.CreateQuad();
-    }
 
-    private void InitializeBatches(int atlasCount)
-    {
-        atlasBatches = new AtlasBatchData[atlasCount];
-        for (int i = 0; i < atlasCount; i++)
-        {
-            atlasBatches[i] = new AtlasBatchData();
-        }
-        isInitialized = true;
+        // Định nghĩa Query chứa Shared Component
+        atlasQuery = GetEntityQuery(
+            ComponentType.ReadOnly<LocalTransform>(),
+            ComponentType.ReadOnly<SpriteSheetAnimationData>(),
+            ComponentType.ReadOnly<VisibleTag>(),
+            ComponentType.ReadOnly<AtlasSharedTag>()
+        );
     }
 
     protected override void OnUpdate()
@@ -49,42 +68,26 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         if (gameHandler == null || gameHandler.atlasTextures == null) return;
 
         int atlasCount = gameHandler.atlasTextures.Length;
-        if (atlasCount == 0) return;
-
-        if (!isInitialized) InitializeBatches(atlasCount);
-
-        // Tạo mảng các List để chứa data phân loại theo Atlas
-        var matricesArray = new NativeArray<NativeList<float4x4>>(atlasCount, Allocator.TempJob);
-        var uvsArray = new NativeArray<NativeList<float4>>(atlasCount, Allocator.TempJob);
-
-        for (int i = 0; i < atlasCount; i++)
+        if (atlasBatches == null)
         {
-            matricesArray[i] = new NativeList<float4x4>(Allocator.TempJob);
-            uvsArray[i] = new NativeList<float4>(Allocator.TempJob);
+            atlasBatches = new AtlasBatchData[atlasCount];
+            for (int i = 0; i < atlasCount; i++) atlasBatches[i] = new AtlasBatchData();
         }
 
-        // Chạy qua tất cả Entity và đẩy nó vào đúng giỏ (List) của Atlas đó
-        // Dùng .Run() thay vì ScheduleParallel vì chúng ta đang add vào mảng NativeList động
-        Entities.WithAll<VisibleTag>().ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
-        {
-            int aIndex = sprite.atlasIndex;
-            if (aIndex >= 0 && aIndex < atlasCount)
-            {
-                float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, 1f);
-                matricesArray[aIndex].Add(float4x4.TRS(transform.Position, transform.Rotation, actualScale));
-                uvsArray[aIndex].Add(sprite.currentUV);
-            }
-        }).Run();
+        // Đảm bảo Query sạch sẽ mỗi frame
+        atlasQuery.ResetFilter();
 
-        // Duyệt qua từng giỏ Atlas và nạp lên GPU vẽ
+        // Duyệt qua từng Atlas
         for (int i = 0; i < atlasCount; i++)
         {
-            int count = matricesArray[i].Length;
+            // BÍ QUYẾT: Chỉ lọc ra những Entity thuộc về Atlas hiện tại
+            atlasQuery.SetSharedComponentFilter(new AtlasSharedTag { atlasIndex = i });
+            int count = atlasQuery.CalculateEntityCount();
+
             if (count > 0)
             {
                 var batch = atlasBatches[i];
 
-                // Mở rộng Buffer nếu thiếu chỗ
                 if (count > batch.maxInstances)
                 {
                     batch.matrixBuffer?.Release();
@@ -94,26 +97,38 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
                     batch.uvBuffer = new ComputeBuffer(batch.maxInstances, 16);
                 }
 
-                // Gán dữ liệu cho Buffer của Atlas này
-                batch.matrixBuffer.SetData(matricesArray[i].AsArray(), 0, 0, count);
-                batch.uvBuffer.SetData(uvsArray[i].AsArray(), 0, 0, count);
+                // Cấp phát mảng tạm thời
+                var matrices = new NativeArray<float4x4>(count, Allocator.TempJob);
+                var uvs = new NativeArray<float4>(count, Allocator.TempJob);
 
-                // Cấu hình Material với Texture của Atlas tương ứng
+                // Giao việc cho CPU chạy ĐA LUỒNG
+                var job = new GatherAtlasDataJob
+                {
+                    matrices = matrices,
+                    uvs = uvs
+                };
+
+                // SCHEDULE PARALLEL Ở ĐÂY
+                this.Dependency = job.ScheduleParallel(atlasQuery, this.Dependency);
+
+                // Bắt buộc phải chờ job xong mới đẩy lên GPU được
+                this.Dependency.Complete();
+
+                // Gán dữ liệu cho GPU
+                batch.matrixBuffer.SetData(matrices);
+                batch.uvBuffer.SetData(uvs);
+
                 mpb.SetBuffer("_Matrices", batch.matrixBuffer);
                 mpb.SetBuffer("_UVData", batch.uvBuffer);
                 mpb.SetTexture("_MainTex", gameHandler.atlasTextures[i]);
 
-                // Vẽ
                 DrawMesh(count, gameHandler.baseWalkingMaterial);
+
+                // Dọn rác
+                matrices.Dispose();
+                uvs.Dispose();
             }
-
-            // Giải phóng bộ nhớ tạm
-            matricesArray[i].Dispose();
-            uvsArray[i].Dispose();
         }
-
-        matricesArray.Dispose();
-        uvsArray.Dispose();
     }
 
     private void DrawMesh(int count, Material material)
@@ -124,7 +139,6 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         args[3] = mesh.GetBaseVertex(0);
         args[4] = 0;
         argsBuffer.SetData(args);
-
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, new Bounds(Vector3.zero, Vector3.one * 10000), argsBuffer, 0, mpb);
     }
 
