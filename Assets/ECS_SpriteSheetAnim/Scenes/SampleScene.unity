@@ -539,9 +539,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2e6563ceae3b6f4fbdf765e0bc12ab4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameHandler
-  AmountEntity: 1000000
-  XRange: 400
-  YRange: 400
+  AmountEntity: 100000
+  XRange: 100
+  YRange: 100
   baseWalkingMaterial: {fileID: 2100000, guid: 907d49b4c245cb545ba8f1385fa5ff5b, type: 2}
   spriteAtlases:
   - {fileID: 100100200, guid: 4ec3b6ee48074a4479a25d7197e173c1, type: 3}
