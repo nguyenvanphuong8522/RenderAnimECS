@@ -1,9 +1,16 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "SpriteSheetData", menuName = "GameData/SpriteSheetData")]
 public class ScriptableSpriteSheet : ScriptableObject
 {
-    public int FrameCount;
-    public Texture2D Texture;
-    public float FrameTimerMax;
+    public List<EnemyAnimConfig> enemyAnimConfigs;
+}
+[Serializable]
+public class EnemyAnimConfig
+{
+    public Texture2D texture;
+    public Sprite[] sprites;
+    public float frameTimerMax;
 }

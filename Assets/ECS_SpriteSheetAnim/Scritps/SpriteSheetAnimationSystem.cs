@@ -1,9 +1,7 @@
 ﻿using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 public struct SpriteSheetAnimationData : IComponentData
 {
@@ -40,8 +38,6 @@ public partial struct SpriteSheetAnimationSystem : ISystem
 
         state.Dependency = job.ScheduleParallel(state.Dependency);
     }
-
-    
 }
 
 [BurstCompile]

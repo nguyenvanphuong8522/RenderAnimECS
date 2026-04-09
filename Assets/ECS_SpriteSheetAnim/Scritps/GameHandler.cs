@@ -3,16 +3,8 @@ using Unity.Entities;
 using Unity.Collections;
 using Unity.Transforms;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
-[System.Serializable]
-public class EnemyAnimConfig
-{
-    // Không cần columns, rows và frameCount nữa vì đã có mảng sprites lo
-    public Texture2D texture;
-    public Sprite[] sprites; // Kéo mảng sprite đã cắt vào đây
-    public float frameTimerMax;
-}
+
 public class GameHandler : MonoBehaviour
 {
     private static GameHandler instance;
@@ -23,7 +15,7 @@ public class GameHandler : MonoBehaviour
 
     public Material baseWalkingMaterial;
 
-    public EnemyAnimConfig[] enemyConfigs;
+    public ScriptableSpriteSheet enemyConfigs;
     public BlobAssetReference<SpriteUVBlob>[] uvBlobs;
 
     private void Awake()
@@ -31,17 +23,16 @@ public class GameHandler : MonoBehaviour
         instance = this;
         Application.targetFrameRate = 60;
 
-        uvBlobs = new BlobAssetReference<SpriteUVBlob>[enemyConfigs.Length];
+        uvBlobs = new BlobAssetReference<SpriteUVBlob>[enemyConfigs.enemyAnimConfigs.Count];
 
-        for (int i = 0; i < enemyConfigs.Length; i++)
+        for (int i = 0; i < enemyConfigs.enemyAnimConfigs.Count; i++)
         {
-            uvBlobs[i] = CreateUVBlobFromSprites(enemyConfigs[i]);
+            uvBlobs[i] = CreateUVBlobFromSprites(enemyConfigs.enemyAnimConfigs[i]);
         }
     }
 
     private void Start()
     {
-
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData), typeof(VisibleTag), typeof(SpatialCell));
 
@@ -49,8 +40,8 @@ public class GameHandler : MonoBehaviour
         entityManager.CreateEntity(entityArchetype, entityArray);
         foreach (Entity entity in entityArray)
         {
-            int indexEnemy = UnityEngine.Random.Range(0, enemyConfigs.Length);
-            var enemyConfig = enemyConfigs[indexEnemy];
+            int indexEnemy = UnityEngine.Random.Range(0, enemyConfigs.enemyAnimConfigs.Count);
+            var enemyConfig = enemyConfigs.enemyAnimConfigs[indexEnemy];
 
             float x = UnityEngine.Random.Range(-XRange, XRange);
             float y = UnityEngine.Random.Range(-YRange, YRange);
@@ -80,7 +71,6 @@ public class GameHandler : MonoBehaviour
                     frameTimerMax = FrameTimerMax,
                     invFrameTimerMax = 1f / FrameTimerMax,
 
-                    // KHỞI TẠO NGAY GIÁ TRỊ BAN ĐẦU
                     currentUV = uvBlobs[indexEnemy].Value.uvs[startFrame],
                     currentSize = uvBlobs[indexEnemy].Value.sizes[startFrame],
 
@@ -91,6 +81,8 @@ public class GameHandler : MonoBehaviour
 
         entityArray.Dispose();
     }
+
+
     private BlobAssetReference<SpriteUVBlob> CreateUVBlobFromSprites(EnemyAnimConfig config)
     {
         var builder = new BlobBuilder(Allocator.Temp);
@@ -115,10 +107,9 @@ public class GameHandler : MonoBehaviour
             float height = rect.height / texHeight;
             arrayBuilder[i] = new float4(x, y, width, height);
 
-            // Tính Kích thước (Size) theo World Space
-            // spr.pixelsPerUnit mặc định của Unity thường là 100
-            float ppu = spr.pixelsPerUnit;
-            sizeBuilder[i] = new float2(rect.width / ppu, rect.height / ppu);
+
+            float pixelPerUnit = spr.pixelsPerUnit;
+            sizeBuilder[i] = new float2(rect.width / pixelPerUnit, rect.height / pixelPerUnit);
         }
 
         var result = builder.CreateBlobAssetReference<SpriteUVBlob>(Allocator.Persistent);

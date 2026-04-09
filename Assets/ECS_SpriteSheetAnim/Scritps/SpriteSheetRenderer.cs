@@ -5,17 +5,18 @@ using Unity.Mathematics;
 using UnityEngine;
 using System.Collections.Generic;
 
+public class BatchData
+{
+    public ComputeBuffer matrixBuffer;
+    public ComputeBuffer uvBuffer;
+    public Texture2D texture;
+    public int maxInstances;
+}
+
+
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class SpriteSheetIndirectRenderSystem : SystemBase
 {
-    private class BatchData
-    {
-        public ComputeBuffer matrixBuffer;
-        public ComputeBuffer uvBuffer;
-        public Texture2D texture;
-        public int maxInstances;
-    }
-
     private ComputeBuffer argsBuffer;
     private NativeArray<uint> args;
     private Material baseMaterial;
@@ -78,12 +79,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
                 // Tính toán lại Scale dựa trên kích thước thực của Sprite frame
                 // transform.Scale là scale chung (ví dụ to lên 1.5 lần)
                 // sprite.currentSize là tỉ lệ gốc của frame đó
-                float3 actualScale = new float3(
-                    sprite.currentSize.x * transform.Scale,
-                    sprite.currentSize.y * transform.Scale,
-                    transform.Scale // Z scale không quá quan trọng với 2D
-                );
-
+                float3 actualScale = new float3(sprite.currentSize.x * transform.Scale, sprite.currentSize.y * transform.Scale, transform.Scale);
                 matricesArray[index].Add(float4x4.TRS(transform.Position, transform.Rotation, actualScale));
                 uvsArray[index].Add(sprite.currentUV);
             }
@@ -128,11 +124,11 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
 
     private void InitBatches(GameHandler handler)
     {
-        for (int i = 0; i < handler.enemyConfigs.Length; i++)
+        for (int i = 0; i < handler.enemyConfigs.enemyAnimConfigs.Count; i++)
         {
             batches.Add(new BatchData
             {
-                texture = handler.enemyConfigs[i].texture,
+                texture = handler.enemyConfigs.enemyAnimConfigs[i].texture,
                 maxInstances = 0
             });
         }
@@ -148,7 +144,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         argsBuffer.SetData(args);
 
         Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
-        
+
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, mpb);
     }
 }

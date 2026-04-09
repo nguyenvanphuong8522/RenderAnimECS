@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 03666f7b7521e41429f1dd458ccfd1d6
+guid: bb610913281a43d4bb3bc95b132573eb
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -123,13 +123,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: sunny-bunny-run_0
+      name: Flying (32x32)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -138,20 +138,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b14a050886cb27444bf873c8bdd27eeb
-      internalID: 588173864
+      spriteID: ed0f4e29cf5915348a5afc63dbeb05c0
+      internalID: -2018942801
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sunny-bunny-run_1
+      name: Flying (32x32)_1
       rect:
         serializedVersion: 2
-        x: 34
+        x: 32
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -160,20 +160,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8686ccb8a016225449e79e749a065617
-      internalID: -1800679457
+      spriteID: 0ab5414175eaabb4c88ad289b7a060e5
+      internalID: 2094150048
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sunny-bunny-run_2
+      name: Flying (32x32)_2
       rect:
         serializedVersion: 2
-        x: 68
+        x: 64
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -182,20 +182,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ed4c22392c9e35b42b49955fcce40c84
-      internalID: 1965367426
+      spriteID: 1f6c4b1e5751efb40a040e04f4379858
+      internalID: -247978585
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sunny-bunny-run_3
+      name: Flying (32x32)_3
       rect:
         serializedVersion: 2
-        x: 102
+        x: 96
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -204,20 +204,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e79b8beba1cd9cb47bbe2fec9329f1fb
-      internalID: 1713084934
+      spriteID: 2f1dc43f6cef009419f353cdc8cf1996
+      internalID: 2043933221
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sunny-bunny-run_4
+      name: Flying (32x32)_4
       rect:
         serializedVersion: 2
-        x: 136
+        x: 128
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -226,20 +226,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ee84f38e2ff1a064790cf94cafcfb2ab
-      internalID: -583738531
+      spriteID: 6fb1028c852f79649a23e4c2cc83f588
+      internalID: 952504535
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sunny-bunny-run_5
+      name: Flying (32x32)_5
       rect:
         serializedVersion: 2
-        x: 170
+        x: 160
         y: 0
-        width: 34
-        height: 44
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -248,8 +248,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6482de8cf862d264588d028b6ab4da8c
-      internalID: 518564046
+      spriteID: c0139ac066c077c41ad4a67a264211de
+      internalID: -511378411
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Flying (32x32)_6
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0d56cadbd137cfb45923812b74701c9c
+      internalID: -462712245
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Flying (32x32)_7
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd1561e4e737596448a8993d5fcf8318
+      internalID: -1813600477
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Flying (32x32)_8
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a2cc1299875d6b142a92aef5d9cacc18
+      internalID: -1896795923
       vertices: []
       indices: 
       edges: []
@@ -258,7 +324,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: e9edd46aa62de144c91972497f02f3f1
+    spriteID: ce0ad6b42954c0c47b7d29c6e85f2e27
     internalID: 0
     vertices: []
     indices: 
@@ -268,14 +334,17 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":6.0,"y":1.0},"gridSpriteSize":{"x":34.0,"y":44.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":9.0,"y":1.0},"gridSpriteSize":{"x":32.0,"y":32.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      sunny-bunny-run_0: 588173864
-      sunny-bunny-run_1: -1800679457
-      sunny-bunny-run_2: 1965367426
-      sunny-bunny-run_3: 1713084934
-      sunny-bunny-run_4: -583738531
-      sunny-bunny-run_5: 518564046
+      Flying (32x32)_0: -2018942801
+      Flying (32x32)_1: 2094150048
+      Flying (32x32)_2: -247978585
+      Flying (32x32)_3: 2043933221
+      Flying (32x32)_4: 952504535
+      Flying (32x32)_5: -511378411
+      Flying (32x32)_6: -462712245
+      Flying (32x32)_7: -1813600477
+      Flying (32x32)_8: -1896795923
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
