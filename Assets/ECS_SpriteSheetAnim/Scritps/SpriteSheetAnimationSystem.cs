@@ -3,21 +3,22 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
+// --- DÀNH CHO ECS COMPONENT ---
 public struct SpriteSheetAnimationData : IComponentData
 {
-    public int atlasIndex;
     public int textureIndex;
-    public int currentFrame;
-    public int frameCount;
-    public float frameTimer;
-    public float frameTimerMax;
-    public float invFrameTimerMax;
+    public int atlasIndex;
 
-    // Lưu UV hiện tại để Render System lấy ra
+    // Quản lý trạng thái Anim hiện tại
+    public int currentAnimIndex; // 0 = Idle, 1 = Run...
+    public int currentFrame;
+    public float frameTimer;
+
     public float4 currentUV;
     public float2 currentSize;
-    // Tham chiếu đến dữ liệu mảng UV (BlobAsset giúp truy cập cực nhanh trong Burst)
-    public BlobAssetReference<SpriteUVBlob> uvArrayBlob;
+
+    // Tham chiếu đến cấu trúc Blob mới
+    public BlobAssetReference<EnemyAnimationsBlob> animsBlob;
 }
 
 public struct SpriteUVBlob
@@ -51,27 +52,26 @@ public partial struct AnimationJob : IJobEntity
     [BurstCompile]
     public void Execute(ref SpriteSheetAnimationData sprite, ref LocalTransform transform)
     {
-        sprite.frameTimer += deltaTime;
+        // Trỏ thẳng tới Animation đang chạy (Idle, Run, v.v...)
+        ref var currentSeq = ref sprite.animsBlob.Value.sequences[sprite.currentAnimIndex];
 
-        // Biến cờ để kiểm tra xem frame có thực sự thay đổi trong frame update này không
+        sprite.frameTimer += deltaTime;
         bool frameChanged = false;
 
-        // Dùng while an toàn hơn float division. 
-        // Nếu game giật lag (deltaTime lớn), nó sẽ tự bù frame chuẩn xác.
-        while (sprite.frameTimer >= sprite.frameTimerMax)
+        // Dùng while tự bù frame khi lag, dựa vào frameTimerMax CỦA RIÊNG ANIM NÀY
+        while (sprite.frameTimer >= currentSeq.frameTimerMax)
         {
-            sprite.frameTimer -= sprite.frameTimerMax;
-            sprite.currentFrame = (sprite.currentFrame + 1) % sprite.frameCount;
+            sprite.frameTimer -= currentSeq.frameTimerMax;
+            sprite.currentFrame = (sprite.currentFrame + 1) % currentSeq.frameCount;
             frameChanged = true;
         }
 
         if (frameChanged)
         {
-            sprite.currentUV = sprite.uvArrayBlob.Value.uvs[sprite.currentFrame];
-            sprite.currentSize = sprite.uvArrayBlob.Value.sizes[sprite.currentFrame];
+            sprite.currentUV = currentSeq.uvs[sprite.currentFrame];
+            sprite.currentSize = currentSeq.sizes[sprite.currentFrame];
         }
 
-        // Giữ nguyên logic sorting Z
         transform.Position.z = transform.Position.y * 0.01f;
     }
 }

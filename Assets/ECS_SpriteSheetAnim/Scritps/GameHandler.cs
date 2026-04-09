@@ -13,23 +13,22 @@ public class GameHandler : MonoBehaviour
 
     public Material baseWalkingMaterial;
 
-    // ĐỔI THÀNH MẢNG ATLAS
     public SpriteAtlas[] spriteAtlases;
     public Texture2D[] atlasTextures;
 
     public ScriptableSpriteSheet enemyConfigs;
-    public BlobAssetReference<SpriteUVBlob>[] uvBlobs;
+
+    // ĐỔI SANG KIỂU BLOB MỚI
+    public BlobAssetReference<EnemyAnimationsBlob>[] uvBlobs;
 
     private void Awake()
     {
         instance = this;
         Application.targetFrameRate = 60;
 
-        // 1. Trích xuất Texture từ tất cả các Atlas
         atlasTextures = new Texture2D[spriteAtlases.Length];
         for (int i = 0; i < spriteAtlases.Length; i++)
         {
-            // Tạm thời lấy texture gốc bằng cách tạo 1 sprite giả từ atlas (cách an toàn trong code)
             Sprite[] tempSprites = new Sprite[1];
             spriteAtlases[i].GetSprites(tempSprites);
             if (tempSprites[0] != null)
@@ -38,22 +37,21 @@ public class GameHandler : MonoBehaviour
             }
         }
 
-        uvBlobs = new BlobAssetReference<SpriteUVBlob>[enemyConfigs.enemyAnimConfigs.Count];
+        uvBlobs = new BlobAssetReference<EnemyAnimationsBlob>[enemyConfigs.enemyAnimConfigs.Count];
 
         for (int i = 0; i < enemyConfigs.enemyAnimConfigs.Count; i++)
         {
-            // Lấy ID atlas trực tiếp từ config bạn đã setup ở Inspector
-            int atlasID = enemyConfigs.enemyAnimConfigs[i].atlasIndex;
-            uvBlobs[i] = CreateUVBlobFromSprites(enemyConfigs.enemyAnimConfigs[i], atlasID);
+            uvBlobs[i] = CreateUVBlobFromSprites(enemyConfigs.enemyAnimConfigs[i]);
         }
     }
-
 
     private void Start()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        EntityArchetype entityArchetype = entityManager.CreateArchetype(typeof(LocalTransform), typeof(SpriteSheetAnimationData),
-            typeof(VisibleTag), typeof(SpatialCell), typeof(AtlasSharedTag));
+        EntityArchetype entityArchetype = entityManager.CreateArchetype(
+            typeof(LocalTransform), typeof(SpriteSheetAnimationData),
+            typeof(VisibleTag), typeof(SpatialCell), typeof(AtlasSharedTag)
+        );
 
         NativeArray<Entity> entityArray = new NativeArray<Entity>(AmountEntity, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
@@ -63,7 +61,6 @@ public class GameHandler : MonoBehaviour
             int indexEnemy = UnityEngine.Random.Range(0, enemyConfigs.enemyAnimConfigs.Count);
             var enemyConfig = enemyConfigs.enemyAnimConfigs[indexEnemy];
 
-            // Lấy ra Atlas Index của enemy này
             int myAtlasIndex = enemyConfig.atlasIndex;
 
             entityManager.SetSharedComponent(entity, new AtlasSharedTag { atlasIndex = myAtlasIndex });
@@ -72,60 +69,88 @@ public class GameHandler : MonoBehaviour
 
             entityManager.SetComponentData(entity, new LocalTransform { Position = new float3(x, y, 0), Scale = 1 });
 
-            int FrameCount = enemyConfig.sprites.Length;
+            // MẶC ĐỊNH LẤY ANIMATION SỐ 0 ĐỂ BẮT ĐẦU (ví dụ: Idle)
+            int defaultAnimIndex = 0;
+            int FrameCount = enemyConfig.sequences[defaultAnimIndex].sprites.Length;
             int startFrame = UnityEngine.Random.Range(0, FrameCount);
 
             entityManager.SetComponentData(entity,
                 new SpriteSheetAnimationData
                 {
                     textureIndex = indexEnemy,
-                    atlasIndex = myAtlasIndex, // LƯU ATLAS INDEX VÀO ĐÂY
+                    atlasIndex = myAtlasIndex,
+
+                    // Thiết lập trạng thái anim hiện tại
+                    currentAnimIndex = defaultAnimIndex,
                     currentFrame = startFrame,
-                    frameCount = FrameCount,
                     frameTimer = 0,
-                    frameTimerMax = enemyConfig.frameTimerMax,
-                    invFrameTimerMax = 1f / enemyConfig.frameTimerMax,
-                    currentUV = uvBlobs[indexEnemy].Value.uvs[startFrame],
-                    currentSize = uvBlobs[indexEnemy].Value.sizes[startFrame],
-                    uvArrayBlob = uvBlobs[indexEnemy]
+
+                    // Gán UV ban đầu dựa trên Anim 0
+                    currentUV = uvBlobs[indexEnemy].Value.sequences[defaultAnimIndex].uvs[startFrame],
+                    currentSize = uvBlobs[indexEnemy].Value.sequences[defaultAnimIndex].sizes[startFrame],
+                    animsBlob = uvBlobs[indexEnemy]
                 }
             );
         }
         entityArray.Dispose();
     }
 
-    private BlobAssetReference<SpriteUVBlob> CreateUVBlobFromSprites(EnemyAnimConfig config, int atlasIndex)
+    // HÀM TẠO BLOB LỒNG NHAU (ANIMATION -> FRAMES)
+    private BlobAssetReference<EnemyAnimationsBlob> CreateUVBlobFromSprites(EnemyAnimConfig config)
     {
         var builder = new BlobBuilder(Allocator.Temp);
-        ref SpriteUVBlob uvBlob = ref builder.ConstructRoot<SpriteUVBlob>();
+        ref EnemyAnimationsBlob root = ref builder.ConstructRoot<EnemyAnimationsBlob>();
 
-        int frameCount = config.sprites.Length;
-        var arrayBuilder = builder.Allocate(ref uvBlob.uvs, frameCount);
-        var sizeBuilder = builder.Allocate(ref uvBlob.sizes, frameCount);
+        int animCount = config.sequences.Length;
+        // Cấp phát mảng chứa các Animation
+        var seqArrayBuilder = builder.Allocate(ref root.sequences, animCount);
 
-        for (int i = 0; i < frameCount; i++)
+        for (int i = 0; i < animCount; i++)
         {
-            Sprite spr = config.sprites[i];
-            Vector2[] uvs = spr.uv;
+            AnimSequence seqConfig = config.sequences[i];
+            int frameCount = seqConfig.sprites.Length;
 
-            float minX = uvs[0].x, minY = uvs[0].y, maxX = uvs[0].x, maxY = uvs[0].y;
-            for (int j = 1; j < uvs.Length; j++)
+            seqArrayBuilder[i].frameCount = frameCount;
+            seqArrayBuilder[i].frameTimerMax = seqConfig.frameTimerMax;
+
+            // Cấp phát mảng UV và Size bên trong Animation này
+            var uvBuilder = builder.Allocate(ref seqArrayBuilder[i].uvs, frameCount);
+            var sizeBuilder = builder.Allocate(ref seqArrayBuilder[i].sizes, frameCount);
+
+            for (int j = 0; j < frameCount; j++)
             {
-                minX = math.min(minX, uvs[j].x);
-                minY = math.min(minY, uvs[j].y);
-                maxX = math.max(maxX, uvs[j].x);
-                maxY = math.max(maxY, uvs[j].y);
-            }
+                Sprite spr = seqConfig.sprites[j];
+                Vector2[] uvs = spr.uv;
 
-            arrayBuilder[i] = new float4(minX, minY, maxX - minX, maxY - minY);
-            sizeBuilder[i] = new float2(spr.rect.width / spr.pixelsPerUnit, spr.rect.height / spr.pixelsPerUnit);
+                float minX = uvs[0].x, minY = uvs[0].y, maxX = uvs[0].x, maxY = uvs[0].y;
+                for (int k = 1; k < uvs.Length; k++)
+                {
+                    minX = math.min(minX, uvs[k].x);
+                    minY = math.min(minY, uvs[k].y);
+                    maxX = math.max(maxX, uvs[k].x);
+                    maxY = math.max(maxY, uvs[k].y);
+                }
+
+                uvBuilder[j] = new float4(minX, minY, maxX - minX, maxY - minY);
+                sizeBuilder[j] = new float2(spr.rect.width / spr.pixelsPerUnit, spr.rect.height / spr.pixelsPerUnit);
+            }
         }
 
-        var result = builder.CreateBlobAssetReference<SpriteUVBlob>(Allocator.Persistent);
+        var result = builder.CreateBlobAssetReference<EnemyAnimationsBlob>(Allocator.Persistent);
         builder.Dispose();
         return result;
     }
 
     public static GameHandler GetInstance() => instance;
-    private void OnDestroy() { /* ... như cũ ... */ }
+
+    private void OnDestroy()
+    {
+        if (uvBlobs != null)
+        {
+            foreach (var b in uvBlobs)
+            {
+                if (b.IsCreated) b.Dispose();
+            }
+        }
+    }
 }
