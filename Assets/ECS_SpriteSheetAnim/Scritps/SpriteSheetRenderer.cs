@@ -12,13 +12,13 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
     {
         public ComputeBuffer matrixBuffer;
         public ComputeBuffer uvBuffer;
-        public Texture2D texture; // Chỉ lưu Texture, không lưu Material nữa
+        public Texture2D texture;
         public int maxInstances;
     }
 
     private ComputeBuffer argsBuffer;
     private NativeArray<uint> args;
-    private Material baseMaterial; // Material duy nhất
+    private Material baseMaterial;
     private Mesh mesh;
     private MaterialPropertyBlock mpb;
     private GameHandler gameHandler;
@@ -51,7 +51,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         if (gameHandler == null)
         {
             gameHandler = GameHandler.GetInstance();
-            baseMaterial = gameHandler.baseWalkingMaterial; // Lấy material gốc
+            baseMaterial = gameHandler.baseWalkingMaterial;
             InitBatches(gameHandler);
         }
 
@@ -66,6 +66,8 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
             matricesArray[i] = new NativeList<float4x4>(Allocator.Temp);
             uvsArray[i] = new NativeList<float4>(Allocator.Temp);
         }
+
+
 
         Entities.WithAll<VisibleTag>()
         .ForEach((in LocalTransform transform, in SpriteSheetAnimationData sprite) =>
@@ -146,7 +148,7 @@ public partial class SpriteSheetIndirectRenderSystem : SystemBase
         argsBuffer.SetData(args);
 
         Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
-        // mpb được áp dụng tại đây, thay đổi _MainTex, _Matrices và _UVData ngay trước khi GPU vẽ
+        
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer, 0, mpb);
     }
 }

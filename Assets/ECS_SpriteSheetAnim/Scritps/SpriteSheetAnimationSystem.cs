@@ -55,18 +55,27 @@ public partial struct AnimationJob : IJobEntity
     public void Execute(ref SpriteSheetAnimationData sprite, ref LocalTransform transform)
     {
         sprite.frameTimer += deltaTime;
-        int advance = (int)(sprite.frameTimer * sprite.invFrameTimerMax);
 
-        if (advance > 0)
+        // Biến cờ để kiểm tra xem frame có thực sự thay đổi trong frame update này không
+        bool frameChanged = false;
+
+        // Dùng while an toàn hơn float division. 
+        // Nếu game giật lag (deltaTime lớn), nó sẽ tự bù frame chuẩn xác.
+        while (sprite.frameTimer >= sprite.frameTimerMax)
         {
-            sprite.frameTimer -= advance * sprite.frameTimerMax;
-            sprite.currentFrame = (sprite.currentFrame + advance) % sprite.frameCount;
+            sprite.frameTimer -= sprite.frameTimerMax;
+            sprite.currentFrame = (sprite.currentFrame + 1) % sprite.frameCount;
+            frameChanged = true;
+        }
 
-            // Cập nhật cả UV và Size mới
+        // Chỉ đọc từ Blob và gán lại UV/Size nếu frame thực sự thay đổi (Tối ưu hiệu năng)
+        if (frameChanged)
+        {
             sprite.currentUV = sprite.uvArrayBlob.Value.uvs[sprite.currentFrame];
             sprite.currentSize = sprite.uvArrayBlob.Value.sizes[sprite.currentFrame];
         }
 
+        // Giữ nguyên logic sorting Z
         transform.Position.z = transform.Position.y * 0.01f;
     }
 }
