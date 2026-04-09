@@ -274,9 +274,18 @@ public partial class TestAnimationSwitchSystem : SystemBase
 
             }).ScheduleParallel();
         }
-        if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKey(KeyCode.T))
         {
-            GameHandler.SpawnDamageText(float3.zero, 123);
+            for (int i = 0; i < 100; i++) // spawn 100 entity mỗi frame
+            {
+                float3 randomPos = new float3(
+                    UnityEngine.Random.Range(-10f, 10f),
+                    UnityEngine.Random.Range(-5f, 5f),
+                    0f
+                );
+
+                GameHandler.SpawnDamageText(randomPos, 123);
+            }
         }
         // --- HOẶC BẠN CÓ THỂ TEST BẰNG CÁCH NHẤN PHÍM SỐ ---
         // Nhấn phím 1 để ép TẤT CẢ về Anim 0 (Idle)

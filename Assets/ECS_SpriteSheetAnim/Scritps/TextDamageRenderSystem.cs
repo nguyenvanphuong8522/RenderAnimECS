@@ -12,6 +12,8 @@ public struct TextDamageData : IComponentData
 
     public float timer;        // Bộ đếm thời gian
     public float lifetime;
+    public float4x4 matrix;
+    public float4 uv;
 }
 
 // Chứa mảng các chữ số. [InternalBufferCapacity] giúp tối ưu RAM cho các số có độ dài dưới 4 chữ số (ví dụ 9999).
@@ -20,7 +22,6 @@ public struct DamageDigitElement : IBufferElementData
 {
     public int digitValue; // Lưu số 0, 1, 2... 9
 }
-
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class TextDamageRenderSystem : SystemBase
@@ -44,17 +45,18 @@ public partial class TextDamageRenderSystem : SystemBase
 
     protected override void OnUpdate()
     {
-        // Giả sử GameHandler của bạn có lưu Atlas chứa font chữ số và mảng UV của nó
         var gameHandler = GameHandler.GetInstance();
         if (gameHandler == null || gameHandler.fontAtlasTexture == null) return;
 
-        // BÍ QUYẾT Ở ĐÂY: Vì 1 Entity đẻ ra N Matrix, ta không biết trước tổng số Matrix là bao nhiêu.
-        // Nên ta phải dùng NativeList thay vì NativeArray.
-        var matrices = new NativeList<float4x4>(Allocator.TempJob);
-        var uvs = new NativeList<float4>(Allocator.TempJob);
-
-        // Lấy mảng UV của các chữ số từ 0-9 (Lưu sẵn trong GameHandler)
         var fontUVBlob = gameHandler.numberUVBlob;
+
+        // 2. SỬ DỤNG NATIVE QUEUE THAY VÌ NATIVE LIST
+        // NativeQueue cực kỳ an toàn khi nhiều luồng CPU cùng ghi dữ liệu vào
+        var instanceQueue = new NativeQueue<TextDamageData>(Allocator.TempJob);
+
+        // Tạo "người ghi" (writer) đa luồng để truyền vào ForEach
+        var queueWriter = instanceQueue.AsParallelWriter();
+
         Entities.ForEach((in LocalTransform transform, in TextDamageData textData, in DynamicBuffer<DamageDigitElement> digits) =>
         {
             int digitCount = digits.Length;
@@ -68,19 +70,22 @@ public partial class TextDamageRenderSystem : SystemBase
                 float3 digitPos = transform.Position;
                 digitPos.x = startX + (i * textData.digitSpacing);
 
-                matrices.Add(float4x4.TRS(digitPos, transform.Rotation, transform.Scale));
-
+                // Tính toán Matrix và UV
+                float4x4 mat = float4x4.TRS(digitPos, transform.Rotation, transform.Scale);
                 int numValue = digits[i].digitValue;
+                float4 uv = fontUVBlob.Value.uvs[numValue];
 
-                // SỬA Ở ĐÂY: Trỏ tới .Value trước, sau đó trỏ tới mảng .uvs, rồi mới lấy index [numValue]
-                uvs.Add(fontUVBlob.Value.uvs[numValue]);
+                // 3. ĐẨY VÀO QUEUE AN TOÀN TRÊN ĐA LUỒNG
+                queueWriter.Enqueue(new TextDamageData { matrix = mat, uv = uv });
             }
-        }).Run();
+        }).ScheduleParallel(); // THAY ĐỔI THÀNH SCHEDULE PARALLEL Ở ĐÂY
 
-        int totalInstances = matrices.Length;
+        // Bắt buộc phải đợi tất cả các luồng CPU làm xong việc trước khi đẩy lên GPU
+        this.Dependency.Complete();
+
+        int totalInstances = instanceQueue.Count;
         if (totalInstances > 0)
         {
-            // Mở rộng Buffer nếu cần
             if (totalInstances > maxInstances)
             {
                 matrixBuffer?.Release();
@@ -90,20 +95,32 @@ public partial class TextDamageRenderSystem : SystemBase
                 uvBuffer = new ComputeBuffer(maxInstances, 16);
             }
 
-            // Đẩy dữ liệu lên GPU
-            matrixBuffer.SetData(matrices.AsArray(), 0, 0, totalInstances);
-            uvBuffer.SetData(uvs.AsArray(), 0, 0, totalInstances);
+            // 4. TÁCH DỮ LIỆU TỪ QUEUE SANG MẢNG ĐỂ GPU ĐỌC ĐƯỢC
+            var matricesArray = new NativeArray<float4x4>(totalInstances, Allocator.Temp);
+            var uvsArray = new NativeArray<float4>(totalInstances, Allocator.Temp);
+
+            for (int i = 0; i < totalInstances; i++)
+            {
+                // Rút từng phần tử ra khỏi Queue
+                var data = instanceQueue.Dequeue();
+                matricesArray[i] = data.matrix;
+                uvsArray[i] = data.uv;
+            }
+
+            matrixBuffer.SetData(matricesArray, 0, 0, totalInstances);
+            uvBuffer.SetData(uvsArray, 0, 0, totalInstances);
 
             mpb.SetBuffer("_Matrices", matrixBuffer);
             mpb.SetBuffer("_UVData", uvBuffer);
-            mpb.SetTexture("_MainTex", gameHandler.fontAtlasTexture); // Dùng Atlas chứa Font chữ
+            mpb.SetTexture("_MainTex", gameHandler.fontAtlasTexture);
 
-            // Lệnh vẽ 1 Draw Call cho TẤT CẢ các con số trên màn hình
             DrawMesh(totalInstances, gameHandler.baseWalkingMaterial);
+
+            matricesArray.Dispose();
+            uvsArray.Dispose();
         }
 
-        matrices.Dispose();
-        uvs.Dispose();
+        instanceQueue.Dispose();
     }
 
     private void DrawMesh(int count, Material material)
