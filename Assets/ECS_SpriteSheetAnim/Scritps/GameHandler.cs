@@ -106,7 +106,7 @@ public class GameHandler : MonoBehaviour
         for (int i = 0; i < frameCount; i++)
         {
             Sprite spr = config.sprites[i];
-            Rect rect = spr.textureRect;
+            Rect rect = spr.rect;
 
             // Tính UV
             float x = rect.x / texWidth;
