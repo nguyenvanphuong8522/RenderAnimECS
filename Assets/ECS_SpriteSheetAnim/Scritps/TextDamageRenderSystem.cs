@@ -9,6 +9,9 @@ public struct TextDamageData : IComponentData
 {
     public float digitSpacing; // Khoảng cách giữa các chữ số (ví dụ: 0.5f)
     public int atlasIndex;     // Nếu bạn có nhiều font chữ khác nhau
+
+    public float timer;        // Bộ đếm thời gian
+    public float lifetime;
 }
 
 // Chứa mảng các chữ số. [InternalBufferCapacity] giúp tối ưu RAM cho các số có độ dài dưới 4 chữ số (ví dụ 9999).

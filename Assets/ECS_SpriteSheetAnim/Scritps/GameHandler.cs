@@ -1,4 +1,5 @@
-﻿using Unity.Collections;
+﻿using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -24,7 +25,6 @@ public class GameHandler : MonoBehaviour
 
     // --- PHẦN THÊM CHO TEXT DAMAGE ---
     [Header("Text Damage Settings")]
-    public SpriteAtlas fontAtlas; // Kéo SpriteAtlas chứa các chữ số vào đây
     public Texture2D fontAtlasTexture; // Hệ thống tự động lấy
     [Tooltip("Kéo 10 Sprite chữ số vào đây THEO THỨ TỰ từ 0 đến 9")]
     public Sprite[] numberSprites = new Sprite[10];
@@ -55,7 +55,7 @@ public class GameHandler : MonoBehaviour
         }
 
         // --- 2. KHỞI TẠO DỮ LIỆU FONT TEXT DAMAGE ---
-        if (fontAtlas != null && numberSprites.Length == 10 && numberSprites[0] != null)
+        if (fontAtlasTexture != null)
         {
             fontAtlasTexture = numberSprites[0].texture;
             numberUVBlob = CreateFontUVBlob(numberSprites);
@@ -211,7 +211,11 @@ public class GameHandler : MonoBehaviour
         entityManager.SetComponentData(textEntity, new LocalTransform { Position = spawnPosition, Scale = 1f });
 
         // Cài đặt khoảng cách giữa các số (bạn có thể tinh chỉnh số 0.3f này tùy kích thước font)
-        entityManager.SetComponentData(textEntity, new TextDamageData { digitSpacing = 2f });
+        entityManager.SetComponentData(textEntity, new TextDamageData {
+            
+            digitSpacing = 2f,
+            lifetime = 1f
+        });
 
         DynamicBuffer<DamageDigitElement> buffer = entityManager.GetBuffer<DamageDigitElement>(textEntity);
 
@@ -307,5 +311,51 @@ public partial class TestAnimationSwitchSystem : SystemBase
                 animData.currentSize = currentSeq.sizes[0];
             }
         }).ScheduleParallel();
+    }
+}
+
+[UpdateInGroup(typeof(SimulationSystemGroup))]
+[BurstCompile]
+public partial struct TextDamageMovementJob : IJobEntity
+{
+    public float deltaTime;
+    public EntityCommandBuffer.ParallelWriter ecb;
+
+    public void Execute([EntityIndexInQuery] int entityInQueryIndex, Entity entity, ref LocalTransform transform, ref TextDamageData textData)
+    {
+        // 1. Tăng thời gian đếm
+        textData.timer += deltaTime;
+
+        // 2. Chữ bay từ từ lên trên (Ví dụ: bay lên với tốc độ 2 units/giây)
+        transform.Position.y += 2f * deltaTime;
+
+        // 3. Nếu hết thời gian sống -> Xóa Entity khỏi bộ nhớ
+        if (textData.timer >= textData.lifetime)
+        {
+            ecb.DestroyEntity(entityInQueryIndex, entity);
+        }
+    }
+}
+
+[UpdateInGroup(typeof(SimulationSystemGroup))]
+public partial class TextDamageMovementSystem : SystemBase
+{
+    private EndSimulationEntityCommandBufferSystem ecbSystem;
+
+    protected override void OnCreate()
+    {
+        ecbSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
+    }
+
+    protected override void OnUpdate()
+    {
+        var job = new TextDamageMovementJob
+        {
+            deltaTime = SystemAPI.Time.DeltaTime,
+            ecb = ecbSystem.CreateCommandBuffer().AsParallelWriter()
+        };
+
+        this.Dependency = job.ScheduleParallel(this.Dependency);
+        ecbSystem.AddJobHandleForProducer(this.Dependency);
     }
 }
