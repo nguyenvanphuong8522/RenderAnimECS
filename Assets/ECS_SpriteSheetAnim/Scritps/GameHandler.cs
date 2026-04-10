@@ -279,8 +279,8 @@ public partial class TestAnimationSwitchSystem : SystemBase
             for (int i = 0; i < 100; i++) // spawn 100 entity mỗi frame
             {
                 float3 randomPos = new float3(
-                    UnityEngine.Random.Range(-10f, 10f),
-                    UnityEngine.Random.Range(-5f, 5f),
+                    UnityEngine.Random.Range(-GameHandler.GetInstance().XRange, GameHandler.GetInstance().XRange),
+                    UnityEngine.Random.Range(-GameHandler.GetInstance().YRange, GameHandler.GetInstance().YRange),
                     0f
                 );
 
